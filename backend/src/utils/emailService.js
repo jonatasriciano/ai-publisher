@@ -3,24 +3,39 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Named export: sendConfirmationEmail
-export const sendConfirmationEmail = async (email, token) => {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+// Create a transporter with Mailtrap credentials
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST, // Mailtrap host
+  port: parseInt(process.env.SMTP_PORT), // Mailtrap port
+  auth: {
+    user: process.env.EMAIL_USER, // Mailtrap username
+    pass: process.env.EMAIL_PASS  // Mailtrap password
+  },
+  tls: {
+    rejectUnauthorized: false // Avoid TLS issues
+  },
+  debug: true, // Enable debugging
+  logger: true // Log SMTP interactions
+});
 
-  const confirmationUrl = `${process.env.BASE_URL}/auth/confirm?token=${token}`;
+// Send confirmation email
+export const sendConfirmationEmail = async (email, token) => {
+  const confirmationUrl = `http://localhost:3000/confirm-email?token=${token}`;
 
   const mailOptions = {
-    from: '"AI Publisher" <no-reply@aipublisher.com>',
+    from: process.env.EMAIL_FROM,
     to: email,
-    subject: 'Confirm Your Email',
-    html: `<p>Click <a href="${confirmationUrl}">here</a> to confirm your email.</p>`,
+    subject: 'Confirm Your Email - AI Publisher',
+    text: `Please confirm your email by clicking this link: ${confirmationUrl}`,
+    html: `<p>Please confirm your email by clicking <a href="${confirmationUrl}">here</a>.</p>`
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ Email sent successfully to:', email);
+    console.log('Message ID:', result.messageId);
+  } catch (error) {
+    console.error('❌ Failed to send email:', error.message);
+    throw new Error('Unable to send confirmation email.');
+  }
 };

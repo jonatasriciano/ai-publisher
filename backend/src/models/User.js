@@ -1,5 +1,3 @@
-// /Users/jonatas/Documents/Projects/ai-publisher/backend/src/models/User.js
-
 // Import required modules
 import mongoose from 'mongoose';
 
@@ -37,21 +35,9 @@ const userSchema = new mongoose.Schema({
   isApproved: { 
     type: Boolean, 
     default: false 
-  },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
-  },
-  updatedAt: { 
-    type: Date, 
-    default: Date.now 
   }
-});
-
-// Middleware to update the "updatedAt" field
-userSchema.pre('save', function (next) {
-  this.updatedAt = Date.now();
-  next();
+}, {
+  timestamps: true // Automatically adds createdAt and updatedAt fields
 });
 
 // Export the User model
