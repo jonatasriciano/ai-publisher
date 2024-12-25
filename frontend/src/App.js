@@ -1,11 +1,18 @@
+// /Users/jonatas/Documents/Projects/ai-publisher/frontend/src/App.js
 import React from 'react';
-import AppRoutes from './routes/AppRoutes'; // Import routes
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+function TestComponent() {
+  return <h1>Test Component is Working!</h1>;
+}
 
 function App() {
   return (
-    <div className="App">
-      <AppRoutes />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<TestComponent />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
