@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile-backend
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    ports:
+      - "9000:9000"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - mongo
+    command: npm run dev
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile-frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    command: npm run start
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

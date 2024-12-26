@@ -1,4 +1,3 @@
-// /Users/jonatas/Documents/Projects/ai-publisher/frontend/webpack.config.js
 const path = require('path');
 
 module.exports = {
@@ -14,7 +13,7 @@ module.exports = {
     },
     port: 3000,
     historyApiFallback: true,
-    hot: true
+    open: true
   },
   module: {
     rules: [
@@ -24,10 +23,7 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: [
-              '@babel/preset-env',
-              '@babel/preset-react'
-            ]
+            presets: ['@babel/preset-env', '@babel/preset-react']
           }
         }
       }
@@ -35,6 +31,5 @@ module.exports = {
   },
   resolve: {
     extensions: ['.js', '.jsx']
-  },
-  devtool: 'source-map'
+  }
 };
