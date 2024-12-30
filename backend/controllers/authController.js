@@ -1,6 +1,6 @@
 // /Users/jonatas/Documents/Projects/ai-publisher/backend/controllers/authController.js
 const User = require('../models/userModel');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
