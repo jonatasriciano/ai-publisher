@@ -1,43 +1,55 @@
-# Define the services required for the ai-publisher project
 services:
-  # Backend service configuration
   backend:
     build:
-      context: ./backend  # Set the context directory for building the backend
-      dockerfile: Dockerfile  # Reference the Dockerfile for backend
+      context: ./backend
+      dockerfile: Dockerfile
     volumes:
-      - ./backend:/app  # Mount the backend directory to /app in the container
-      - /app/node_modules  # Use a volume to store node_modules separately
+      - ./backend:/app
+      - /app/node_modules
     ports:
-      - "9000:9000"  # Map port 9000 of the container to port 9000 on the host
+      - "9000:9000"
     environment:
-      - NODE_ENV=development  # Set the NODE_ENV environment variable to development
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongo:27017/ai_publisher_mvp
     depends_on:
-      - mongo  # Ensure that the backend starts after MongoDB
-    command: npm run dev  # Command to run the backend server in development mode
+      mongo:
+        condition: service_healthy
+    command: npm run dev
+    networks:
+      - app-network
 
-  # Frontend service configuration
   frontend:
     build:
-      context: ./frontend  # Set the context directory for building the frontend
-      dockerfile: Dockerfile  # Reference the Dockerfile for frontend
+      context: ./frontend
+      dockerfile: Dockerfile
     volumes:
-      - ./frontend:/app  # Mount the frontend directory to /app in the container
-      - /app/node_modules  # Use a volume to store node_modules separately
+      - ./frontend:/app
+      - /app/node_modules
     ports:
-      - "3000:3000"  # Map port 3000 of the container to port 3000 on the host
+      - "3000:3000"
     environment:
-      - NODE_ENV=development  # Set the NODE_ENV environment variable to development
-    command: npm run start  # Command to start the frontend development server
+      - NODE_ENV=development
+    command: npm run start
+    networks:
+      - app-network
 
-  # MongoDB service configuration
   mongo:
-    image: mongo:latest  # Use the latest MongoDB image
+    image: mongo:latest
     ports:
-      - "27017:27017"  # Map port 27017 of the container to port 27017 on the host
+      - "27017:27017"
     volumes:
-      - mongo-data:/data/db  # Use a volume for MongoDB data persistence
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
 
-# Define volumes used by the services
 volumes:
-  mongo-data:  # Named volume to store MongoDB data persistently
+  mongo-data:
+
+networks:
+  app-network:
+    driver: bridge

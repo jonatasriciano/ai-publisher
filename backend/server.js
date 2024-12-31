@@ -9,15 +9,34 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// (Optional) connect to MongoDB (comment out if not using a database)
+// MongoDB connection configuration
 const mongoose = require('mongoose');
-mongoose
-  .connect(process.env.MONGO_URI || 'mongodb://localhost/ai_publisher_mvp', { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true 
-  })
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.log(err));
+
+// Define MongoDB connection URL based on environment
+// When running in Docker, we use the service name 'mongo' as the host
+// The format is: mongodb://[service-name]:[port]/[database-name]
+const MONGO_URI = process.env.MONGO_URI;
+
+// Connect to MongoDB with retry logic
+const connectWithRetry = async () => {
+  try {
+    await mongoose.connect(MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      // Add retry configuration
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      socketTimeoutMS: 45000, // Close sockets after 45s
+    });
+    console.log('MongoDB connected successfully');
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+    console.log('Retrying in 5 seconds...');
+    setTimeout(connectWithRetry, 5000);
+  }
+};
+
+// Initialize MongoDB connection
+connectWithRetry();
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
