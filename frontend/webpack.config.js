@@ -1,7 +1,9 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
   mode: 'development',
+  devtool: 'source-map',
   entry: './src/index.js', // Main entry file
   output: {
     path: path.resolve(__dirname, 'dist'), // Output directory
@@ -36,4 +38,11 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx'], // Resolve these extensions
   },
+  plugins: [
+    new webpack.DefinePlugin({
+      'process.env': JSON.stringify(process.env),
+    }),
+  ],
+
+  
 };

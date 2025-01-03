@@ -1,7 +1,7 @@
 const llmService = require('../services/llmService');
 const path = require('path');
 const fs = require('fs');
-const Post = require('../models/Post');
+const Post = require('../models/postModel');
 
 exports.uploadPost = async (req, res) => {
   let filePath = null;

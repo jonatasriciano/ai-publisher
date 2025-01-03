@@ -1,3 +1,4 @@
+// /Users/jonatas/Documents/Projects/ai-publisher/frontend/src/components/Upload.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -15,41 +16,72 @@ function Upload() {
   const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
   const maxSize = 5 * 1024 * 1024; // 5MB
 
+  // Function to check if the user is authenticated
+  const isAuthenticated = () => {
+    const token = localStorage.getItem('token');
+
+    console.log('Token found:', token);
+    if (!token) return false;
+  
+    try {
+      // Decode JWT payload
+      const payload = JSON.parse(atob(token.split('.')[1])); // Decode payload
+      console.log('Decoded token payload:', payload);
+  
+      const isTokenExpired = payload.exp * 1000 < Date.now(); // Check token expiration
+      console.log('Is token expired?', isTokenExpired);
+      return !isTokenExpired;
+    } catch (err) {
+      console.error('Token validation error:', err);
+      return false;
+    }
+  };
+
   useEffect(() => {
-    const fetchUploads = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-
-        const { data } = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/posts`, 
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-            withCredentials: true
-          }
-        );
-
-        setUploads(data);
-      } catch (err) {
-        setError(err.response?.data?.error || 'Error fetching uploads');
-        if (err.response?.status === 401) {
-          navigate('/login');
-        }
-      }
-    };
-
-    fetchUploads();
+    if (!isAuthenticated()) {
+      console.log('User is not authenticated, redirecting to login.');
+      navigate('/login');
+    } else {
+      console.log('User is authenticated, fetching uploads.');
+      fetchUploads();
+    }
   }, [navigate]);
+
+  const fetchUploads = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No token found, redirecting to login.');
+        navigate('/login');
+        return;
+      }
+  
+      const { data } = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/posts`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+  
+      console.log('Fetched uploads:', data);
+      setUploads(data);
+    } catch (err) {
+      console.error('Error fetching uploads:', err);
+      setError(err.response?.data?.error || 'Error fetching uploads');
+      if (err.response?.status === 401) {
+        console.log('Unauthorized, redirecting to login.');
+        navigate('/login'); // Redirect if unauthorized
+      }
+    }
+  };
 
   const validateFile = (file) => {
     if (!file) return 'Please select a file';
     if (!allowedTypes.includes(file.type)) {
-      return 'Invalid file type. Only JPG, PNG and PDF allowed.';
+      return 'Invalid file type. Only JPG, PNG, and PDF allowed.';
     }
     if (file.size > maxSize) {
       return 'File size exceeds 5MB limit.';
@@ -84,8 +116,8 @@ function Upload() {
         formData,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
           },
           withCredentials: true,
           onUploadProgress: (progressEvent) => {
@@ -93,15 +125,14 @@ function Upload() {
               (progressEvent.loaded * 100) / progressEvent.total
             );
             setProgress(percentCompleted);
-          }
+          },
         }
       );
 
-      setUploads(prev => [...prev, data]);
+      setUploads((prev) => [...prev, data]);
       setFile(null);
       setProgress(0);
       alert('Upload successful!');
-
     } catch (err) {
       setError(err.message || 'Upload failed');
       if (err.response?.status === 401) {
@@ -120,11 +151,11 @@ function Upload() {
             <div className="card-body">
               <h3 className="card-title">Upload Content</h3>
               {error && <div className="alert alert-danger">{error}</div>}
-              
+
               <form onSubmit={handleUpload}>
                 <div className="mb-3">
                   <label className="form-label">Platform</label>
-                  <select 
+                  <select
                     className="form-select"
                     value={platform}
                     onChange={(e) => setPlatform(e.target.value)}
@@ -148,9 +179,9 @@ function Upload() {
                 {progress > 0 && (
                   <div className="mb-3">
                     <div className="progress">
-                      <div 
-                        className="progress-bar" 
-                        style={{width: `${progress}%`}}
+                      <div
+                        className="progress-bar"
+                        style={{ width: `${progress}%` }}
                       >
                         {progress}%
                       </div>
@@ -158,8 +189,8 @@ function Upload() {
                   </div>
                 )}
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn btn-primary w-100"
                   disabled={loading || !file}
                 >
@@ -177,12 +208,16 @@ function Upload() {
               {uploads.length > 0 ? (
                 <ul className="list-group">
                   {uploads.map((upload) => (
-                    <li 
-                      key={upload._id} 
+                    <li
+                      key={upload._id}
                       className="list-group-item d-flex justify-content-between align-items-center"
                     >
                       <span>{upload.platform}</span>
-                      <span className={`badge bg-${upload.status === 'pending' ? 'warning' : 'success'}`}>
+                      <span
+                        className={`badge bg-${
+                          upload.status === 'pending' ? 'warning' : 'success'
+                        }`}
+                      >
                         {upload.status}
                       </span>
                     </li>

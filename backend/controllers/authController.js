@@ -14,7 +14,7 @@ const generateToken = (user) => {
       approved: user.approved
     },
     process.env.JWT_SECRET,
-    { expiresIn: '1h' }
+    { expiresIn: '24h' }
   );
 };
 
@@ -47,7 +47,7 @@ exports.register = async (req, res) => {
       userId: user._id
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Registration error:', error.message);
     res.status(500).json({
       error: 'Registration failed',
       code: 'REGISTRATION_ERROR'
@@ -87,7 +87,7 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error:', error.message);
     res.status(500).json({
       error: 'Login failed',
       code: 'LOGIN_ERROR'

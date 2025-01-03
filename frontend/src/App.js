@@ -11,13 +11,20 @@ import ErrorBoundary from './components/ErrorBoundary';
 import LoadingSpinner from './components/LoadingSpinner';
 
 const PrivateRoute = ({ children, requiredRole }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
+
+  console.log('PrivateRoute - Loading:', loading);
+  console.log('PrivateRoute - User:', user);
+  console.log('PrivateRoute - isAuthenticated:', isAuthenticated);
 
   if (loading) return <LoadingSpinner />;
-  
-  if (!user) return <Navigate to="/login" />;
-  
+  if (!isAuthenticated) {
+    console.warn('PrivateRoute - User not authenticated. Redirecting to login.');
+    return <Navigate to="/login" />;
+  }
+
   if (requiredRole && user.role !== requiredRole) {
+    console.warn(`PrivateRoute - User does not have required role "${requiredRole}". Redirecting to home.`);
     return <Navigate to="/" />;
   }
 

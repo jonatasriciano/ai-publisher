@@ -1,7 +1,14 @@
+// /Users/jonatas/Documents/Projects/ai-publisher/frontend/src/components/Login.js
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import LoadingSpinner from './LoadingSpinner';
+
+// Base API URL from environment variables
+const API_URL = process.env.REACT_APP_API_URL;
+
+const token = localStorage.getItem('token');
+console.log('Token:', token);
 
 function Login() {
   const [formData, setFormData] = useState({
@@ -12,14 +19,14 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const location = useLocation();
   const navigate = useNavigate();
   const message = location.state?.message;
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
@@ -32,31 +39,38 @@ function Login() {
 
     try {
       const { data } = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/auth/login`,
+        `${API_URL}/api/auth/login`,
         formData,
         {
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
           withCredentials: true
         }
       );
 
+      // Save token in localStorage
       localStorage.setItem('token', data.token);
-      
+
       if (formData.rememberMe) {
         localStorage.setItem('email', formData.email);
       } else {
         localStorage.removeItem('email');
       }
 
-      if (data.user.approved) {
-        navigate('/upload');
-      } else {
-        setError('Account pending approval');
-      }
+      // Redirect to the upload page if the login is successful
+      navigate('/upload');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      console.error('Login error:', err);
+
+      // Display appropriate error messages
+      if (err.response?.status === 401) {
+        setError('Invalid email or password.');
+      } else if (err.response?.status === 500) {
+        setError('Internal server error. Please try again later.');
+      } else {
+        setError(err.response?.data?.error || 'Login failed.');
+      }
     } finally {
       setLoading(false);
     }
@@ -101,7 +115,7 @@ function Login() {
                   </label>
                   <div className="input-group">
                     <input
-                      type={showPassword ? "text" : "password"}
+                      type={showPassword ? 'text' : 'password'}
                       id="password"
                       name="password"
                       className="form-control"
@@ -115,7 +129,7 @@ function Login() {
                       className="btn btn-outline-secondary"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? "Hide" : "Show"}
+                      {showPassword ? 'Hide' : 'Show'}
                     </button>
                   </div>
                 </div>
@@ -134,8 +148,8 @@ function Login() {
                   </label>
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn btn-primary w-100 mb-3"
                   disabled={loading}
                 >

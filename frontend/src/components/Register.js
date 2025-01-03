@@ -62,6 +62,7 @@ function Register() {
         state: { message: 'Registration successful. Please check your email to verify your account.' } 
       });
     } catch (err) {
+      console.error('Registration error:', err);
       setError(err.response?.data?.error || 'Registration failed');
     } finally {
       setLoading(false);

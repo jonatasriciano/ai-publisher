@@ -17,6 +17,7 @@ services:
     command: npm run dev
     networks:
       - app-network
+    restart: unless-stopped
 
   frontend:
     build:
@@ -28,27 +29,30 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
-    command: npm run start
+      - REACT_APP_API_URL=http://localhost:9000
+    command: npm start
     networks:
       - app-network
+    depends_on:
+      - backend
 
   mongo:
     image: mongo:latest
     ports:
       - "27017:27017"
     volumes:
-      - mongo-data:/data/db
+      - mongodb_data:/data/db
+    networks:
+      - app-network
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - app-network
+    restart: unless-stopped
 
 volumes:
-  mongo-data:
+  mongodb_data:
 
 networks:
   app-network:
