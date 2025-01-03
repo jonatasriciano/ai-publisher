@@ -1,90 +1,70 @@
 // /Users/jonatas/Documents/Projects/ai-publisher/frontend/src/context/AuthContext.js
-// React Context for Authentication Management
+// Authentication Context for managing authentication state and logic.
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
-// Create a Context for authentication
+// Create the authentication context
 const AuthContext = createContext(null);
 
-// AuthProvider component to manage authentication state and logic
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // State to store the authenticated user's data
-  const [loading, setLoading] = useState(true); // Loading state for authentication checks
+  const [user, setUser] = useState(null); // Store user data
+  const [loading, setLoading] = useState(true); // Manage loading state
 
-  // Run authentication check on component mount
   useEffect(() => {
-    console.log('AuthProvider - Initializing authentication check...');
-    checkAuth();
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token'); // Retrieve token from localStorage
+      if (token && !isTokenExpired(token)) {
+        try {
+          const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setUser(response.data.user); // Set user if authentication is valid
+        } catch (error) {
+          console.error('Authentication check failed:', error);
+          logout(); // Log out if authentication fails
+        }
+      } else {
+        logout(); // Log out if no token or token expired
+      }
+      setLoading(false); // End loading state
+    };
+
+    checkAuth(); // Execute authentication check on mount
   }, []);
-  
+
+  // Helper function to check token expiration
   const isTokenExpired = (token) => {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1])); // Decode JWT payload
-      return payload.exp * 1000 < Date.now(); // Check expiration
-    } catch (err) {
-      console.error('Error decoding token:', err);
-      return true; // Treat as expired
-    }
-  };
-  
-  const checkAuth = async () => {
-    const token = localStorage.getItem('token');
-    if (!token || isTokenExpired(token)) {
-      console.warn('Token missing or expired. Logging out.');
-      localStorage.removeItem('token');
-      setLoading(false);
-      return;
-    }
-  
-    try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log('API Response:', response);
-      setUser(response.data.user);  // Make sure user data is correctly set
+      const { exp } = JSON.parse(atob(token.split('.')[1])); // Decode JWT payload
+      return exp * 1000 < Date.now(); // Validate token expiration
     } catch (error) {
-      console.error('Failed to authenticate user:', error);
-      localStorage.removeItem('token');
-      setUser(null);
-    } finally {
-      setLoading(false);
+      return true; // Consider token expired if decoding fails
     }
   };
-  
-  // Function to log in the user
-  const login = async (token, userData) => {
-    console.log('Saving token to localStorage:', token);
-    localStorage.setItem('token', token);
-    setUser(userData);
-    console.log('User data set in context:', userData);
-  };
 
-  // Function to log out the user
+  // Logout function to clear authentication state
   const logout = () => {
-    localStorage.removeItem('token'); // Remove the token from localStorage
-    setUser(null); // Clear the user data
+    localStorage.removeItem('token'); // Clear token from localStorage
+    setUser(null); // Clear user state
   };
 
-  // Context value to be shared with components
-  const value = {
-    user, // Authenticated user data
-    loading, // Loading state
-    login, // Login function
-    logout, // Logout function
-    isAuthenticated: !!user, // Boolean to check if the user is authenticated
-    isAdmin: user?.role === 'admin', // Boolean to check if the user is an admin
+  // Function to determine if user is authenticated
+  const isAuthenticated = () => {
+    const token = localStorage.getItem('token'); // Get token from localStorage
+    return token && !isTokenExpired(token); // Check token validity
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {!loading && children} {/* Render children only after loading is complete */}
+    <AuthContext.Provider value={{ user, isAuthenticated, logout, loading }}>
+      {!loading && children} {/* Render children only after loading finishes */}
     </AuthContext.Provider>
   );
 };
 
 // Hook to access the AuthContext
 export const useAuth = () => {
-  const context = useContext(AuthContext);
+  const context = useContext(AuthContext); // Retrieve context
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }

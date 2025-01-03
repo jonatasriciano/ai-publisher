@@ -39,16 +39,6 @@ function Navigation() {
                     Upload
                   </Link>
                 </li>
-                {user.role === 'admin' && (
-                  <li className="nav-item">
-                    <Link 
-                      className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
-                      to="/admin"
-                    >
-                      Admin Dashboard
-                    </Link>
-                  </li>
-                )}
               </>
             )}
           </ul>

@@ -1,0 +1,27 @@
+openapi: 3.0.0
+info:
+  title: AI Publisher API
+  version: 1.0.0
+  description: API documentation for the AI Publisher
+paths:
+  /api/auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201':
+          description: User registered
+        '400':
+          description: Validation error

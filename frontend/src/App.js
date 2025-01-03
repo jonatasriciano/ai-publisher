@@ -10,22 +10,16 @@ import AdminDashboard from './components/AdminDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingSpinner from './components/LoadingSpinner';
 
-const PrivateRoute = ({ children, requiredRole }) => {
-  const { user, loading, isAuthenticated } = useAuth();
+const PrivateRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
 
-  console.log('PrivateRoute - Loading:', loading);
-  console.log('PrivateRoute - User:', user);
-  console.log('PrivateRoute - isAuthenticated:', isAuthenticated);
+  console.log('PrivateRoute - isAuthenticated:', isAuthenticated, 'loading:', loading);
+
 
   if (loading) return <LoadingSpinner />;
   if (!isAuthenticated) {
     console.warn('PrivateRoute - User not authenticated. Redirecting to login.');
     return <Navigate to="/login" />;
-  }
-
-  if (requiredRole && user.role !== requiredRole) {
-    console.warn(`PrivateRoute - User does not have required role "${requiredRole}". Redirecting to home.`);
-    return <Navigate to="/" />;
   }
 
   return children;
@@ -58,7 +52,7 @@ function App() {
                 } />
                 
                 <Route path="/admin" element={
-                  <PrivateRoute requiredRole="admin">
+                  <PrivateRoute>
                     <AdminDashboard />
                   </PrivateRoute>
                 } />

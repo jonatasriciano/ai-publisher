@@ -1,3 +1,4 @@
+// /Users/jonatas/Documents/Projects/ai-publisher/backend/models/postModel.js
 const mongoose = require('mongoose');
 
 const postSchema = new mongoose.Schema({
@@ -37,14 +38,22 @@ const postSchema = new mongoose.Schema({
     provider: { type: String, enum: ['openai', 'gemini', null], default: null }
   },
   metadata: {
-    views: { type: Number, default: 0 },
-    likes: { type: Number, default: 0 },
-    shares: { type: Number, default: 0 },
-    engagement: { type: Number, default: 0 }
+    views: { type: Number, default: 0, min: 0 },
+    likes: { type: Number, default: 0, min: 0 },
+    shares: { type: Number, default: 0, min: 0 },
+    engagement: { type: Number, default: 0, min: 0 }
   }
 }, {
   timestamps: true
 });
 
+// Calculate engagement before saving
+postSchema.pre('save', function (next) {
+  this.metadata.engagement = this.metadata.likes + this.metadata.shares + this.metadata.views;
+  next();
+});
+
+// Add compound index
+postSchema.index({ userId: 1, platform: 1 });
 
 module.exports = mongoose.model('Post', postSchema);

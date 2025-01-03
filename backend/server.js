@@ -1,92 +1,39 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
-const path = require('path');
 const helmet = require('helmet');
-
+const apiRoutes = require('./routes/api');
+const logger = require('./utils/logger');
 const app = express();
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const swaggerDocument = YAML.load('./swagger.yaml');
+require('dotenv').config();
 
-// Security middleware
+
+// Middleware
+app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(helmet());
-
-// CORS configuration
-const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-
-app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploads folder
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Routes
+app.use('/api', apiRoutes);
 
-// MongoDB connection configuration
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/ai-publisher';
+// Health Check
+app.get('/', (req, res) => res.send('API is running...'));
 
-// Connect to MongoDB with retry logic
-const connectWithRetry = async () => {
-  try {
-    await mongoose.connect(MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-    });
-    console.log('MongoDB connected successfully');
-  } catch (err) {
-    console.error('MongoDB connection error:', err);
-    console.log('Retrying in 5 seconds...');
-    setTimeout(connectWithRetry, 5000);
-  }
-};
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Initialize MongoDB connection
-connectWithRetry();
-
-// Import routes
-const authRoutes = require('./routes/authRoutes');
-const postRoutes = require('./routes/postRoutes');
-
-// Route handlers
-app.use('/api/auth', authRoutes);
-app.use('/api/posts', postRoutes);
-
-// Error handling middleware
+// Error Handling
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error(err.message, { stack: err.stack });
   res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    error: err.message || 'Internal server error',
+    code: err.code || 'SERVER_ERROR',
   });
 });
 
-// Handle 404
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
 
-// Start server
+// Start Server
 const PORT = process.env.PORT || 9000;
-const server = app.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
-    console.log('HTTP server closed');
-    mongoose.connection.close(false, () => {
-      console.log('MongoDB connection closed');
-      process.exit(0);
-    });
-  });
-});
-
-module.exports = app;
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
