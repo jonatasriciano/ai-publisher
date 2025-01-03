@@ -1,115 +1,76 @@
-// /Users/jonatas/Documents/Projects/ai-publisher/backend/controllers/postController.js
-const llmService = require('../services/llmService'); // Import the LLM service
-const path = require('path'); // For handling file paths
-const fs = require('fs'); // For reading files
+const llmService = require('../services/llmService');
+const path = require('path');
+const fs = require('fs');
+const Post = require('../models/Post');
 
-/**
- * Handles the post upload process.
- * Validates the user, processes the uploaded file, and generates captions and tags using LLMs.
- * 
- * @param {Object} req - The request object containing user data, file, and other details.
- * @param {Object} res - The response object to send back data to the client.
- */
 exports.uploadPost = async (req, res) => {
+  let filePath = null;
+  
   try {
-    const { platform } = req.body;
-
-    // Check if user is approved
     if (!req.user || !req.user.approved) {
       return res.status(403).json({ error: 'User not approved to upload' });
     }
 
-    const filePath = req.file ? req.file.path : null;
-    if (!filePath) {
+    const { platform } = req.body;
+    const validPlatforms = ['LinkedIn', 'Twitter', 'Facebook'];
+    if (!validPlatforms.includes(platform)) {
+      return res.status(400).json({ error: 'Invalid platform' });
+    }
+
+    if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Convert the uploaded image to base64
+    filePath = req.file.path;
+    
+    const stats = fs.statSync(filePath);
+    if (stats.size > 5 * 1024 * 1024) {
+      fs.unlinkSync(filePath);
+      return res.status(400).json({ error: 'File too large' });
+    }
+
     const imageBase64 = fs.readFileSync(filePath, { encoding: 'base64' });
 
-    // Prepare the prompt data
     const promptData = {
+      platform,
       description: "Generate a suitable caption and tags for this image.",
-      tone: "Friendly", // Example tone
-      audience: "Social media users", // Example audience
-      maxTags: 10,
-      image: imageBase64, // Send the base64 image
+      tone: "Professional",
+      audience: platform === 'LinkedIn' ? 'Business professionals' : 'Social media users',
+      maxTags: platform === 'Twitter' ? 5 : 10,
+      image: imageBase64,
     };
 
-    // Call LLM to generate caption and tags
-    const { caption, tags } = await llmService.generateCaptionAndTags(promptData, 200);
+    const { caption, tags, description } = await llmService.generateCaptionAndTags(promptData);
 
-    // Generate a fake postId for the MVP
-    const postId = Date.now().toString();
-
-    // Return the generated data
-    return res.json({
-      message: 'Upload successful',
-      postId,
+    const post = await Post.create({
+      userId: req.user._id,
       platform,
-      filePath,
+      filePath: req.file.filename,
       caption,
-      tags,
+      tags: tags.split(' '),
+      aiGenerated: {
+        caption: true,
+        tags: true,
+        provider: 'openai'
+      }
     });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Server error' });
-  }
-};
 
-/**
- * Handles team approval for a post.
- * Simulates approval for MVP purposes.
- * 
- * @param {Object} req - The request object containing the postId.
- * @param {Object} res - The response object to send back data to the client.
- */
-exports.approveByTeam = async (req, res) => {
-  try {
-    const { postId } = req.body;
+    res.status(201).json({
+      message: 'Post created successfully',
+      post: {
+        id: post._id,
+        platform,
+        caption,
+        tags: post.tags,
+        status: post.status
+      }
+    });
 
-    // Simulate team approval (replace with DB logic in production)
-    return res.json({ message: `Post ${postId} approved by team` });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Server error' });
-  }
-};
-
-/**
- * Handles client approval for a post.
- * Simulates approval for MVP purposes.
- * 
- * @param {Object} req - The request object containing the postId.
- * @param {Object} res - The response object to send back data to the client.
- */
-exports.approveByClient = async (req, res) => {
-  try {
-    const { postId } = req.body;
-
-    // Simulate client approval (replace with DB logic in production)
-    return res.json({ message: `Post ${postId} approved by client` });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Server error' });
-  }
-};
-
-/**
- * Publishes the post to the specified platform.
- * Simulates publishing for MVP purposes.
- * 
- * @param {Object} req - The request object containing the postId and platform.
- * @param {Object} res - The response object to send back data to the client.
- */
-exports.publishPost = async (req, res) => {
-  try {
-    const { postId, platform } = req.body;
-
-    // Simulate publishing (replace with platform API logic in production)
-    return res.json({ message: `Post ${postId} published to ${platform}` });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Server error' });
+  } catch (error) {
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Upload failed' });
   }
 };
