@@ -1,47 +1,18 @@
-const jwt = require('jsonwebtoken');
-
-/**
- * Middleware to validate JWT token and set user in request
- */
-const requireAuth = (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) throw new Error('No token provided');
-    if (!authHeader.startsWith('Bearer ')) throw new Error('Invalid token format');
-
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret_key');
-
-    req.user = decoded;
-    next();
-  } catch (error) {
-    console.error('Authentication error:', error.message);
-    res.status(401).json({
-      error: error.message || 'Authentication failed',
-      code: 'AUTH_ERROR',
-    });
-  }
-};
-
-module.exports = { requireAuth };const rateLimit = require('express-rate-limit');
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
-  message: { error: 'Too many requests, please try again later' },
-});
-
-module.exports = { authLimiter };const validator = require('validator');
+// validationMiddleware.js
+const validator = require('validator');
 const xss = require('xss');
 
+// Utility function to sanitize input
 const sanitizeInput = (input) => {
   return xss(validator.trim(input));
 };
 
+// Utility function to validate email
 const validateEmail = (email) => {
   return validator.isEmail(email);
 };
 
+// Utility function to validate password
 const validatePassword = (password) => {
   return validator.isLength(password, { min: 6 }) &&
     /[A-Z]/.test(password) && // Has uppercase
@@ -49,12 +20,13 @@ const validatePassword = (password) => {
     /[0-9]/.test(password);   // Has number
 };
 
+// Utility function to validate name
 const validateName = (name) => {
   return validator.isLength(name, { min: 2, max: 50 }) &&
     validator.matches(name, /^[a-zA-Z\s]*$/);
 };
 
-exports.validateRegistration = (req, res, next) => {
+const validateRegistration = (req, res, next) => {
   try {
     const { email, password, name } = req.body;
 
@@ -110,7 +82,7 @@ exports.validateRegistration = (req, res, next) => {
   }
 };
 
-exports.validateLogin = (req, res, next) => {
+const validateLogin = (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -146,7 +118,7 @@ exports.validateLogin = (req, res, next) => {
   }
 };
 
-exports.validatePostCreation = (req, res, next) => {
+const validatePostCreation = (req, res, next) => {
   try {
     const { platform, caption } = req.body;
 
@@ -186,3 +158,5 @@ exports.validatePostCreation = (req, res, next) => {
     });
   }
 };
+
+module.exports = { validateRegistration, validateLogin, validatePostCreation };
