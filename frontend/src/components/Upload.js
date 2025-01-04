@@ -1,69 +1,54 @@
-// /Users/jonatas/Documents/Projects/ai-publisher/frontend/src/components/Upload.js
-// File Upload Component for handling user uploads.
-
+// /frontend/src/components/Upload.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import LoadingSpinner from './LoadingSpinner';
-import { useAuth } from '../context/AuthContext'; // Import authentication context
+import LoadingSpinner from './LoadingSpinner'; // Spinner component
+import { useAuth } from '../context/AuthContext'; // Authentication context
 
 function Upload() {
-  const [file, setFile] = useState(null); // State for file to be uploaded
-  const [platform, setPlatform] = useState('LinkedIn'); // State for selected platform
-  const [uploads, setUploads] = useState([]); // State for uploaded files
-  const [loading, setLoading] = useState(false); // Loading state
-  const [progress, setProgress] = useState(0); // Progress state for uploads
-  const [error, setError] = useState(''); // Error state
+  const [file, setFile] = useState(null); // Selected file state
+  const [platform, setPlatform] = useState('LinkedIn'); // Selected platform state
+  const [uploads, setUploads] = useState([]); // List of uploaded files
+  const [loading, setLoading] = useState(false); // Loading state for uploads
+  const [progress, setProgress] = useState(0); // Upload progress state
+  const [error, setError] = useState(''); // Error message state
   const navigate = useNavigate(); // Navigation hook
-  const { isAuthenticated } = useAuth(); // Get authentication status from AuthContext
-  const token = localStorage.getItem('token'); // Retrieve token
+  const { isAuthenticated } = useAuth(); // Authentication status from context
+  const token = localStorage.getItem('token'); // Retrieve stored token
 
-  
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:9000';
 
-  // Ensure user is authenticated on component mount
+  // Check authentication and fetch uploads on component mount
   useEffect(() => {
     if (!isAuthenticated()) {
-      console.log('User is not authenticated. Redirecting to login.');
-      navigate('/login'); // Redirect unauthenticated user
+      console.warn('[Upload] User not authenticated. Redirecting to login.');
+      navigate('/login');
     } else {
-      console.log('User authenticated. Fetching uploads.');
-      fetchUploads(); // Fetch existing uploads for authenticated users
+      console.info('[Upload] User authenticated. Fetching uploads...');
+      fetchUploads();
     }
   }, [navigate, isAuthenticated]);
 
-  // Function to fetch uploads from the server
+  // Fetch uploads from the server
   const fetchUploads = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/posts`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`, // Ensure the token is valid
-          'Content-Type': 'application/json',
-        },
+      console.info('[Uploads] Fetching uploads...');
+      const response = await axios.get(`${API_URL}/api/posts`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      const textResponse = await response.text(); // Get the raw text response for debugging
-      console.log('Raw response:', textResponse);
-
-      if (!response.ok) {
-        const error = JSON.parse(textResponse); // Attempt to parse as JSON
-        console.error('Error fetching uploads:', error);
-        throw new Error(error.error || 'Unknown error occurred');
-      }
-
-      const data = JSON.parse(textResponse); // Parse as JSON
-      console.log('Fetched uploads:', data);
-      setUploads(data); // Update state with parsed data
-    } catch (error) {
-      console.error('Error in fetchUploads:', error.message);
+      console.info('[Uploads] Fetched data:', response.data);
+      setUploads(response.data);
+    } catch (err) {
+      console.error('[Uploads] Error fetching uploads:', err.message);
       setError('Failed to fetch uploads');
     }
   };
 
-  // Function to validate the uploaded file
+  // Validate the uploaded file
   const validateFile = (file) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf']; // Allowed MIME types
-    const maxSize = 5 * 1024 * 1024; // Maximum file size: 5MB
+    console.info('[ValidateFile] Validating file:', file);
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    const maxSize = 5 * 1024 * 1024;
 
     if (!file) return 'Please select a file.';
     if (!allowedTypes.includes(file.type)) return 'Invalid file type.';
@@ -71,47 +56,63 @@ function Upload() {
     return null;
   };
 
-  // Function to handle file upload
+  // Handle the file upload
   const handleUpload = async (e) => {
-    e.preventDefault();
-    setError(''); // Reset error state
-    setLoading(true); // Set loading state
-    setProgress(0); // Reset progress state
+    e.preventDefault(); // Prevent default form submission
+    setError('');
+    setLoading(true);
+    setProgress(0);
 
     try {
       if (!token) {
-        console.log('No token found. Redirecting to login.');
-        navigate('/login'); // Redirect if token is missing
+        console.error('[Upload] Missing token. Redirecting to login.');
+        navigate('/login');
         return;
       }
 
-      const validationError = validateFile(file); // Validate file
+      console.info('[Upload] Validating file...');
+      if (!file) {
+        throw new Error('No file selected.');
+      }
+
+      const validationError = validateFile(file);
       if (validationError) throw new Error(validationError);
 
       const formData = new FormData();
-      formData.append('file', file); // Append file to form data
-      formData.append('platform', platform); // Append platform to form data
+      formData.append('file', file);
+      formData.append('platform', platform);
+      formData.append('caption', 'Sample caption');
 
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/posts/upload`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: (event) => {
-          const percentCompleted = Math.round((event.loaded * 100) / event.total);
-          setProgress(percentCompleted); // Update progress state
-        },
-      });
+      // Log the FormData entries
+      for (let [key, value] of formData.entries()) {
+        console.log(`[FormData] ${key}:`, value);
+      }
 
-      setUploads((prev) => [...prev, response.data]); // Update uploads list
-      setFile(null); // Reset file input
-      setProgress(0); // Reset progress
-      alert('Upload successful!'); // Notify user of success
+      console.info('[FormData] Prepared for upload:', { file, platform });
+
+      console.info('[Upload] Sending file to API...');
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/posts/upload`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+          withCredentials: true, 
+        }
+      );
+
+      console.info('[Upload] Success:', response.data);
+      setUploads((prev) => [...prev, response.data]);
+      setFile(null);
+      setProgress(0);
     } catch (err) {
-      console.error('Upload error:', err);
-      setError(err.message || 'Upload failed'); // Display error message
+      console.warn('[Upload] API URL:', `${API_URL}/api/posts/upload`);
+      console.error('[Upload] Error during upload:', err.message, err.response?.data || err);
+      setError(err.response?.data?.error || err.message || 'Upload failed');
     } finally {
-      setLoading(false); // Reset loading state
+      setLoading(false);
     }
   };
 
@@ -182,7 +183,11 @@ function Upload() {
                       className="list-group-item d-flex justify-content-between align-items-center"
                     >
                       <span>{upload.platform}</span>
-                      <span className={`badge bg-${upload.status === 'pending' ? 'warning' : 'success'}`}>
+                      <span
+                        className={`badge bg-${
+                          upload.status === 'pending' ? 'warning' : 'success'
+                        }`}
+                      >
                         {upload.status}
                       </span>
                     </li>

@@ -33,7 +33,7 @@ function Login() {
     setError('');
 
     try {
-      const { data } = await axios.post(`${API_URL}/auth/login`, formData, {
+      const { data } = await axios.post(`${API_URL}/api/auth/login`, formData, {
         headers: { 'Content-Type': 'application/json' },
         withCredentials: true,
       });

@@ -6,7 +6,7 @@ const authController = require('../controllers/authController');
 const { authLimiter } = require('../middleware/rateLimitMiddleware');
 
 // Debug
-console.log('Loading auth routes...');
+console.log('[AuthRoutes] Initializing authentication routes...');
 
 // Auth routes
 router.post('/register',
@@ -17,8 +17,10 @@ router.post('/register',
     body('password').isLength({ min: 6 })
   ],
   (req, res, next) => {
+    console.log('[AuthRoutes] Register request body:', req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.error('[AuthRoutes] Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
     next();
@@ -33,8 +35,10 @@ router.post('/login',
     body('password').exists()
   ],
   (req, res, next) => {
+    console.log('[AuthRoutes] Login request body:', req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.error('[AuthRoutes] Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
     next();
@@ -43,6 +47,9 @@ router.post('/login',
 );
 
 // Protected routes
-router.get('/me', requireAuth, authController.me);
+router.get('/me', requireAuth, (req, res) => {
+  console.log('[AuthRoutes] Fetching user profile for:', req.user);
+  authController.me(req, res);
+});
 
 module.exports = router;

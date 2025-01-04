@@ -49,7 +49,9 @@ const postSchema = new mongoose.Schema({
 
 // Calculate engagement before saving
 postSchema.pre('save', function (next) {
+  console.log('[PostModel] Pre-save hook called. Current data:', this);
   this.metadata.engagement = this.metadata.likes + this.metadata.shares + this.metadata.views;
+  console.log('[PostModel] Calculated engagement:', this.metadata.engagement);
   next();
 });
 

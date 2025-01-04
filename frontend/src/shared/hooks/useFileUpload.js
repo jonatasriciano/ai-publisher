@@ -36,46 +36,51 @@ const useFileUpload = (options = {}) => {
   }, [validateFile]);
 
   const uploadFile = useCallback(async (additionalData = {}) => {
+    console.log('[useFileUpload] Starting upload. File:', file);
+  
     if (!file) {
+      console.error('[useFileUpload] No file selected');
       setError('No file selected');
       return null;
     }
-
+  
     setLoading(true);
     setProgress(0);
     setError(null);
-
+  
     const formData = new FormData();
     formData.append('file', file);
     Object.entries(additionalData).forEach(([key, value]) => {
       formData.append(key, value);
     });
-
+  
+    console.log('[useFileUpload] FormData prepared:', formData);
+  
     try {
       const { data } = await axios.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
         onUploadProgress: (progressEvent) => {
-          const percentage = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
+          const percentage = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          console.log(`[useFileUpload] Upload progress: ${percentage}%`);
           setProgress(percentage);
-        }
+        },
       });
-
+  
+      console.log('[useFileUpload] Upload successful:', data);
       setFile(null);
       setProgress(100);
       return data;
-
     } catch (err) {
+      console.error('[useFileUpload] Upload failed:', err);
       setError(err.response?.data?.error || 'Upload failed');
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [file, endpoint]);
+  });
 
   const reset = useCallback(() => {
     setFile(null);

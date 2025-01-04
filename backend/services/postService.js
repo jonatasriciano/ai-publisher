@@ -1,9 +1,14 @@
 const Post = require('../models/postModel');
 
-/**
- * Create a new post
- */
 const createPost = async ({ userId, platform, filePath, caption, tags }) => {
+  console.log('[CreatePost] Creating post with data:', {
+    userId,
+    platform,
+    filePath,
+    caption,
+    tags,
+  });
+
   const post = new Post({
     userId,
     platform,
@@ -12,7 +17,10 @@ const createPost = async ({ userId, platform, filePath, caption, tags }) => {
     tags,
     status: 'pending',
   });
-  return await post.save();
+
+  const savedPost = await post.save();
+  console.log('[CreatePost] Post saved:', savedPost);
+  return savedPost;
 };
 
 /**
