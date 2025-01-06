@@ -6,10 +6,12 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
+      - ./backend/uploads:/app/uploads
     ports:
       - "9000:9000"
     environment:
       - NODE_ENV=development
+      - DEBUG=express:*,mongoose:*
       - MONGO_URI=mongodb://mongo:27017/ai_publisher_mvp
     depends_on:
       mongo:
