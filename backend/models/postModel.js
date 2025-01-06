@@ -1,56 +1,53 @@
 // /Users/jonatas/Documents/Projects/ai-publisher/backend/models/postModel.js
 const mongoose = require('mongoose');
 
-// Define the schema for posts
 const postSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Reference to the User model
+    ref: 'User',
     required: true,
-    index: true, // Indexed for faster queries
+    index: true
   },
   platform: {
     type: String,
-    enum: ['LinkedIn', 'Twitter', 'Facebook'], // Allowed platforms
-    required: true,
+    enum: ['LinkedIn', 'Twitter', 'Facebook'],
+    required: true
   },
   filePath: {
     type: String,
-    required: true, // Required field for the uploaded file path
+    required: true
   },
   caption: {
     type: String,
-    required: true, // Required caption for the post
-    maxlength: 2000, // Maximum length of the caption
+    required: true,
+    maxlength: 2000
   },
-  tags: [
-    {
-      type: String,
-      maxlength: 100, // Maximum length for individual tags
-    },
-  ],
+  tags: [{
+    type: String,
+    maxlength: 100
+  }],
   status: {
     type: String,
-    enum: ['pending', 'team_approved', 'client_approved', 'published', 'rejected'], // Status options
-    default: 'pending', // Default status
-    index: true, // Indexed for faster filtering
+    enum: ['pending', 'team_approved', 'client_approved', 'published', 'rejected'],
+    default: 'pending',
+    index: true
   },
   aiGenerated: {
-    caption: { type: Boolean, default: false }, // AI-generated caption flag
-    tags: { type: Boolean, default: false }, // AI-generated tags flag
-    provider: { type: String, enum: ['openai', 'gemini', null], default: null }, // AI provider
+    caption: { type: Boolean, default: false },
+    tags: { type: Boolean, default: false },
+    provider: { type: String, enum: ['openai', 'gemini', null], default: null }
   },
   metadata: {
-    views: { type: Number, default: 0, min: 0 }, // Post views
-    likes: { type: Number, default: 0, min: 0 }, // Post likes
-    shares: { type: Number, default: 0, min: 0 }, // Post shares
-    engagement: { type: Number, default: 0, min: 0 }, // Calculated engagement
-  },
+    views: { type: Number, default: 0, min: 0 },
+    likes: { type: Number, default: 0, min: 0 },
+    shares: { type: Number, default: 0, min: 0 },
+    engagement: { type: Number, default: 0, min: 0 }
+  }
 }, {
-  timestamps: true, // Automatically manage createdAt and updatedAt fields
+  timestamps: true
 });
 
-// Pre-save hook to calculate engagement
+// Calculate engagement before saving
 postSchema.pre('save', function (next) {
   console.log('[PostModel] Pre-save hook called. Current data:', this);
   this.metadata.engagement = this.metadata.likes + this.metadata.shares + this.metadata.views;
@@ -58,7 +55,7 @@ postSchema.pre('save', function (next) {
   next();
 });
 
-// Compound index for userId and platform
+// Add compound index
 postSchema.index({ userId: 1, platform: 1 });
 
 module.exports = mongoose.model('Post', postSchema);

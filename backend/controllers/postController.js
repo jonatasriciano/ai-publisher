@@ -1,4 +1,4 @@
-// /Users/jonatas/Documents/Projects/ai-publisher/backend/controllers/postController.js
+// postController.js
 const { createPost, getPostsForUser } = require('../services/postService');
 const path = require('path');
 
@@ -7,37 +7,18 @@ const path = require('path');
  */
 exports.uploadPost = async (req, res) => {
   try {
-    console.log('[Upload] File:', req.files);
+    console.log('[Upload] File:', req.file);
     console.log('[Upload] Body:', req.body);
 
-    // Check if a file was uploaded
-    if (!req.files || !req.files.file) {
+    if (!req.file) {
       console.error('[Upload] File not provided');
       return res.status(400).json({ error: 'File not provided' });
     }
 
-    const file = req.files.file;
-
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (!allowedTypes.includes(file.mimetype)) {
-      console.error('[Upload] Invalid file type:', file.mimetype);
-      return res.status(400).json({ error: 'Invalid file type' });
-    }
-
-    // Generate a unique filename
-    const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.name)}`;
-    const uploadPath = path.join(__dirname, '../uploads', filename);
-
-    // Move the file to the uploads directory
-    await file.mv(uploadPath);
-    console.log('[Upload] File saved at:', uploadPath);
-
-    // Create the post entry
     const post = await createPost({
       userId: req.user.userId,
       platform: req.body.platform,
-      filePath: uploadPath,
+      filePath: req.file.path,
       caption: req.body.caption,
       tags: req.body.tags ? req.body.tags.split(',') : [],
     });

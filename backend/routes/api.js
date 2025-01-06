@@ -1,66 +1,64 @@
 const express = require('express');
 const router = express.Router();
-const fileUpload = require('express-fileupload'); // Express middleware for file uploads
-const path = require('path');
-const { requireAuth } = require('../middleware/authMiddleware'); // Middleware for authentication
+const authRoutes = require('./authRoutes');
+const { requireAuth } = require('../middleware/authMiddleware');
 const postController = require('../controllers/postController');
+const multer = require('multer');
+const path = require('path');
 
-// Debugging log for API routes initialization
-console.log('[API] Initializing routes...');
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, '../uploads/');
+    console.log('[Multer] Upload path:', uploadPath);
+    cb(null, uploadPath); // Set upload destination
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    console.log('[Multer] Generated filename:', `${uniqueSuffix}-${file.originalname}`);
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
+  },
+});
 
-// Middleware for handling file uploads
-const handleFileUpload = async (req, res, next) => {
-  try {
-    // Check if a file was uploaded
-    if (!req.files || !req.files.file) {
-      console.error('[Upload] No file uploaded');
+// Create multer upload instance
+const upload = multer({ storage });
+
+// Middleware for handling multer errors
+const handleMulterErrors = (error, req, res, next) => {
+  if (error) {
+    console.error('[MulterError]', error.message);
+    return res.status(400).json({ error: error.message });
+  }
+  next();
+};
+
+// Mount authentication routes
+router.use('/auth', authRoutes);
+
+// Protected upload route with multer and error handling
+router.post(
+  '/posts/upload',
+  (req, res, next) => {
+    console.log('[API] Upload route hit');
+    next();
+  },
+  requireAuth,
+  upload.single('file'),
+  (req, res, next) => {
+    console.log('[API] File uploaded:', req.file);
+    console.log('[API] Body:', req.body);
+
+    if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const file = req.files.file;
-    console.log('[Upload] File received:', file.name);
-
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (!allowedTypes.includes(file.mimetype)) {
-      console.error('[Upload] Invalid file type:', file.mimetype);
-      return res.status(400).json({ error: 'Invalid file type' });
-    }
-
-    // Generate a unique filename to prevent collisions
-    const uniqueFilename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.name)}`;
-    const uploadPath = path.join(__dirname, '../uploads', uniqueFilename);
-
-    // Move file to the upload directory
-    await file.mv(uploadPath);
-    console.log('[Upload] File successfully saved to:', uploadPath);
-
-    // Attach file information to the request for further processing
-    req.uploadedFile = {
-      filename: uniqueFilename,
-      path: uploadPath,
-      mimetype: file.mimetype,
-    };
-
-    next(); // Proceed to the next middleware or controller
-  } catch (error) {
-    console.error('[Upload] Error:', error.message);
-    res.status(500).json({ error: 'File upload failed' });
-  }
-};
-
-// Route for user authentication
-router.use('/auth', require('../routes/authRoutes'));
-
-// Route for file upload
-router.post(
-  '/posts/upload',
-  requireAuth, // Ensure the user is authenticated
-  handleFileUpload, // Handle the file upload
-  postController.uploadPost // Process the uploaded file
+    next();
+  },
+  handleMulterErrors,
+  postController.uploadPost
 );
 
-// Route to fetch posts
+// Protected route to get posts
 router.get('/posts', requireAuth, postController.getPosts);
 
 module.exports = router;
