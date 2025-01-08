@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import LoadingSpinner from './LoadingSpinner';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:9000';
+const API_URL = process.env.REACT_APP_API_URL;
 
 function Login() {
   const [formData, setFormData] = useState({

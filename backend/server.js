@@ -88,5 +88,5 @@ app.use((err, req, res, next) => {
 // Start the server
 const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => {
-  console.log(`[Server] Listening on http://localhost:${PORT}`);
+  console.log(`[Server] Listening on ${process.env.BACKEND_URL}`);
 });

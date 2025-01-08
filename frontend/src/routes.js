@@ -2,14 +2,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './components/Login';
 import Register from './components/Register';
 import Upload from './components/Upload';
-import Welcome from './components/Welcome'; // Renomeado para corresponder ao seu outro código
+import Welcome from './components/Welcome'; 
 import { useAuth } from './context/AuthContext';
 
 // Component for private routes
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
-  if (loading) return <div>Loading...</div>; // Placeholder, você pode usar um spinner
+  if (loading) return <div>Loading...</div>; 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 };

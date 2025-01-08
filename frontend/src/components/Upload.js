@@ -15,7 +15,7 @@ function Upload() {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
     const token = localStorage.getItem('token');
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:9000';
+    const API_URL = process.env.REACT_APP_API_URL;
 
     const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
     const MAX_FILE_SIZE_MB = 5;
