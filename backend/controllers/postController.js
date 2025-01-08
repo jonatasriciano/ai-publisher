@@ -1,6 +1,5 @@
-// postController.js
 const { createPost, getPostsForUser } = require('../services/postService');
-const path = require('path');
+const { generateCaptionAndTags } = require('../services/llmService');
 
 /**
  * Create a new post
@@ -9,18 +8,45 @@ exports.uploadPost = async (req, res) => {
   try {
     console.log('[Upload] File:', req.file);
     console.log('[Upload] Body:', req.body);
-
+    
     if (!req.file) {
       console.error('[Upload] File not provided');
       return res.status(400).json({ error: 'File not provided' });
     }
 
+    if (!req.body) {
+      console.error('[Upload] Body not provided');
+      return res.status(400).json({ error: 'Body not provided' });
+    }
+
+    // Generate description and tags using the LLM
+    let description = '';
+    let tags = [];
+    try {
+      const llmResponse = await generateCaptionAndTags(req.file, req.body); // Pass req.file and req.body
+      
+      if (llmResponse?.message && typeof llmResponse.message === 'object') {
+        description = llmResponse.message.caption || '';
+        tags = llmResponse.message.tags || [];
+        console.log('[LLM] Description and tags generated:', { description, tags });
+      } else {
+        console.warn('[LLM] Response message is not an object or is missing');
+        description = 'No description generated';
+        tags = [];
+      }
+
+    } catch (llmError) {
+      console.error('[LLM] Error generating description and tags:', llmError.message);
+       return res.status(500).json({ error: 'Failed to generate description and tags', llmError: llmError.message });
+    }
+
+    // Create post with generated description and tags
     const post = await createPost({
       userId: req.user.userId,
       platform: req.body.platform,
       filePath: req.file.path,
-      caption: req.body.caption,
-      tags: req.body.tags ? req.body.tags.split(',') : [],
+      caption: description,
+      tags: tags,
     });
 
     console.log('[Upload] Post created:', post);

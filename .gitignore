@@ -48,6 +48,7 @@ Release/
 .docusaurus
 .cache/
 .parcel-cache
+uploads
 
 # Serverless directories
 .serverless/
