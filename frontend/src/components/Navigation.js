@@ -9,8 +9,10 @@ function Navigation() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    if (window.confirm('Are you sure you want to logout?')) {
+      logout();
+      navigate('/login');
+    }
   };
 
   const isActive = (path) => location.pathname === path;
@@ -20,26 +22,30 @@ function Navigation() {
       <div className="container">
         <Link className="navbar-brand" to="/">AI Publisher</Link>
         
-        <button 
-          className="navbar-toggler" 
-          onClick={() => setIsOpen(!isOpen)}
+        <button
+          className="navbar-toggler"
+          type="button"
+          aria-controls="navbarNav"
+          aria-expanded={isOpen}
+          aria-label="Toggle navigation"
+          onClick={() => setIsOpen((prev) => !prev)}
         >
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        <div className={`collapse navbar-collapse ${isOpen ? 'show' : ''}`}>
+        <div className={`collapse navbar-collapse ${isOpen ? 'show' : ''}`} id="navbarNav">
           <ul className="navbar-nav me-auto">
             {user && (
-              <>
-                <li className="nav-item">
-                  <Link 
-                    className={`nav-link ${isActive('/upload') ? 'active' : ''}`}
-                    to="/upload"
-                  >
-                    Upload
-                  </Link>
-                </li>
-              </>
+              <li className="nav-item">
+                <Link 
+                  className={`nav-link ${isActive('/upload') ? 'active' : ''}`}
+                  to="/upload"
+                  onClick={() => setIsOpen(false)} // Close menu on click
+                  aria-current={isActive('/upload') ? 'page' : undefined}
+                >
+                  Upload
+                </Link>
+              </li>
             )}
           </ul>
 
@@ -48,7 +54,7 @@ function Navigation() {
               <>
                 <li className="nav-item">
                   <span className="nav-link">
-                    Welcome, {user.name}
+                    Welcome, <strong>{user.name}</strong>
                   </span>
                 </li>
                 <li className="nav-item">
@@ -66,6 +72,8 @@ function Navigation() {
                   <Link 
                     className={`nav-link ${isActive('/login') ? 'active' : ''}`}
                     to="/login"
+                    onClick={() => setIsOpen(false)} // Close menu on click
+                    aria-current={isActive('/login') ? 'page' : undefined}
                   >
                     Login
                   </Link>
@@ -74,6 +82,8 @@ function Navigation() {
                   <Link 
                     className={`nav-link ${isActive('/register') ? 'active' : ''}`}
                     to="/register"
+                    onClick={() => setIsOpen(false)} // Close menu on click
+                    aria-current={isActive('/register') ? 'page' : undefined}
                   >
                     Register
                   </Link>

@@ -5,51 +5,48 @@ const { requireAuth } = require('../middleware/authMiddleware');
 const authController = require('../controllers/authController');
 const { authLimiter } = require('../middleware/rateLimitMiddleware');
 
-// Debug
-console.log('[AuthRoutes] Initializing authentication routes...');
+/**
+ * Routes for user authentication
+ */
 
-// Auth routes
-router.post('/register',
+// Route for user registration
+router.post(
+  '/register',
   authLimiter,
   [
-    body('name').isLength({ min: 2 }).trim(),
-    body('email').isEmail().normalizeEmail(),
-    body('password').isLength({ min: 6 })
+    body('name').isLength({ min: 2 }).trim(), // Validate name
+    body('email').isEmail().normalizeEmail(), // Validate and normalize email
+    body('password').isLength({ min: 6 }), // Validate password length
   ],
   (req, res, next) => {
-    console.log('[AuthRoutes] Register request body:', req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.error('[AuthRoutes] Validation errors:', errors.array());
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ errors: errors.array() }); // Return validation errors
     }
     next();
   },
   authController.register
 );
 
-router.post('/login',
+// Route for user login
+router.post(
+  '/login',
   authLimiter,
   [
-    body('email').isEmail().normalizeEmail(),
-    body('password').exists()
+    body('email').isEmail().normalizeEmail(), // Validate email
+    body('password').exists(), // Check if password exists
   ],
   (req, res, next) => {
-    console.log('[AuthRoutes] Login request body:', req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.error('[AuthRoutes] Validation errors:', errors.array());
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ errors: errors.array() }); // Return validation errors
     }
     next();
   },
   authController.login
 );
 
-// Protected routes
-router.get('/me', requireAuth, (req, res) => {
-  console.log('[AuthRoutes] Fetching user profile for:', req.user);
-  authController.me(req, res);
-});
+// Protected route to get the authenticated user's profile
+router.get('/me', requireAuth, authController.me);
 
 module.exports = router;

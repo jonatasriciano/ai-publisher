@@ -45,7 +45,7 @@ async function generatePromptFromGpt(userPrompt, imgUrl, systemPrompt, maxTokens
       tokensUsed: response.usage?.total_tokens || 0,
     };
   } catch (error) {
-    console.error("OpenAI API error:", error.message);
+    console.error("[OpenAI] API error:", error.message);
     throw error;
   }
 }
@@ -60,42 +60,32 @@ async function generatePromptFromGpt(userPrompt, imgUrl, systemPrompt, maxTokens
  */
 async function generatePromptFromGemini(prompt, image, maxTokens = 150) {
   try {
-    console.log("Sending to Gemini API:", { prompt, image, maxTokens });
-
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent([prompt, image]);
 
-    console.log("Gemini API response:", result);
-
-    // Check if the response is valid before accessing it
     if (!result || !result.response || !result.response.text) {
       throw new Error("Invalid response from Gemini API: Response or text is missing.");
     }
 
     let message;
     try {
-      // Extract JSON from markdown code block, if any
-        const text = await result.response.text();
-        const jsonString = text.replace(/```json\n|```/g, '');
-
-         message = JSON.parse(jsonString);
-
-
+      const text = await result.response.text();
+      const jsonString = text.replace(/```json\n|```/g, '');
+      message = JSON.parse(jsonString);
     } catch (e) {
       const text = await result.response.text();
-      message = text
-      console.warn("Response from Gemini is not a valid JSON", e);
+      message = text;
+      console.warn("[Gemini] Response is not valid JSON");
     }
 
     const tokensUsed = result?.response?.usageMetadata?.totalTokens;
 
     return {
       message: message,
-      tokensUsed: tokensUsed || maxTokens, // fallback to maxTokens if token data is missing
+      tokensUsed: tokensUsed || maxTokens,
     };
   } catch (error) {
-    console.error("Gemini API error:", error);
-    // You might want to throw a more specific error here if needed
+    console.error("[Gemini] API error:", error.message);
     throw new Error(`Gemini API error: ${error.message}`);
   }
 }
@@ -109,7 +99,7 @@ async function generatePromptFromGemini(prompt, image, maxTokens = 150) {
  */
 async function generateCaptionAndTags(file, body, provider = "gemini") {
   try {
-    let { platform, caption, tone, targetAudience, maximumTags } = body;
+    const { platform, tone, targetAudience, maximumTags } = body;
     const imagePath = file.path;
     const imageBuffer = await fs.readFile(imagePath);
     const imageBase64 = imageBuffer.toString("base64");
@@ -147,70 +137,24 @@ async function generateCaptionAndTags(file, body, provider = "gemini") {
       throw new Error("Invalid provider specified. Use 'openai' or 'gemini'.");
     }
 
-    const { message } = result;
+    const message = result.message;
+    let caption, tags, description;
 
-
-      let formattedTags = "";
-      let description = "";
-      caption = "No caption generated";
-
-
-   if (typeof message === 'object' && message !== null) {
-         if (message.caption) {
-             caption = message.caption;
-         }
-
-         if(message.description) {
-           description = message.description
-         }
-
-          if (message.tags) {
-              if (Array.isArray(message.tags)) {
-                  formattedTags = message.tags
-                      .map((tag) => (tag.startsWith("#") ? tag : `#${tag}`))
-                      .join(" ");
-              } else if (typeof message.tags === "string") {
-                formattedTags = message.tags.startsWith("#")
-                      ? message.tags
-                      : `#${message.tags}`;
-            }
-        }
-     } else if (typeof message === 'string') {
-        // Try to extract caption, tags, and description using regex
-        const captionMatch = message.match(/caption:\s*(.+?)(?=\s*(?:tags:|description:|$))/i);
-        const tagsMatch = message.match(/tags:\s*(.+?)(?=\s*(?:description:|$))/i);
-        const descriptionMatch = message.match(/description:\s*(.+)$/i);
-
-
-          if (captionMatch && captionMatch[1]) {
-              caption = captionMatch[1].trim();
-           }
-
-
-            if (descriptionMatch && descriptionMatch[1]) {
-                description = descriptionMatch[1].trim();
-             }
-
-
-        if (tagsMatch && tagsMatch[1]) {
-             formattedTags = tagsMatch[1].trim().split(',').map(tag => (tag.startsWith("#") ? tag : `#${tag}`)).join(' ');
-         }
-
-
-        console.log("Response from Gemini as string", message)
-     }
-
-
+    if (typeof message === 'object') {
+      caption = message.caption;
+      description = message.description;
+      tags = message.tags;
+    }
 
     return {
-      caption: caption,
-      tags: formattedTags || "No tags generated",
-      description: description || "",
+      caption: caption || "No caption generated",
+      description: description || "No description generated",
+      tags: tags || [],
       tokensUsed: result.tokensUsed,
       provider,
     };
   } catch (error) {
-    console.error("Error generating caption and tags:", error);
+    console.error("[AI Service] Error generating caption and tags:", error.message);
     throw new Error(`Error generating caption and tags: ${error.message}`);
   }
 }

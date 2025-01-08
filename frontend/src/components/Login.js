@@ -38,6 +38,7 @@ function Login() {
         withCredentials: true,
       });
 
+      // Save the token
       localStorage.setItem('token', data.token);
 
       if (formData.rememberMe) {
@@ -48,7 +49,6 @@ function Login() {
 
       navigate('/upload');
     } catch (err) {
-      console.error('Login error:', err);
       const errorMessage =
         err.response?.data?.error || 'Unexpected error. Please try again.';
       setError(errorMessage);
@@ -66,7 +66,11 @@ function Login() {
               <h2 className="text-center mb-4">Welcome Back</h2>
 
               {message && <div className="alert alert-info">{message}</div>}
-              {error && <div className="alert alert-danger">{error}</div>}
+              {error && (
+                <div className="alert alert-danger" aria-live="polite">
+                  {error}
+                </div>
+              )}
 
               <form onSubmit={handleLogin}>
                 <div className="mb-3">
@@ -84,6 +88,7 @@ function Login() {
                     required
                   />
                 </div>
+
                 <div className="mb-3">
                   <label htmlFor="password" className="form-label">
                     Password
@@ -108,6 +113,7 @@ function Login() {
                     </button>
                   </div>
                 </div>
+
                 <div className="mb-3 form-check">
                   <input
                     type="checkbox"
@@ -121,13 +127,15 @@ function Login() {
                     Remember Me
                   </label>
                 </div>
+
                 <button
                   type="submit"
                   className="btn btn-primary w-100"
                   disabled={loading}
                 >
-                  {loading ? <LoadingSpinner /> : 'Login'}
+                  {loading ? <LoadingSpinner size="sm" /> : 'Login'}
                 </button>
+
                 <div className="text-center mt-3">
                   <Link to="/forgot-password">Forgot Password?</Link>
                   <hr />

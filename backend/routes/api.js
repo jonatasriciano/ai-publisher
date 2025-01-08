@@ -10,13 +10,11 @@ const path = require('path');
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = path.join(__dirname, '../uploads/');
-    console.log('[Multer] Upload path:', uploadPath);
-    cb(null, uploadPath);
+    cb(null, uploadPath); // Specify the upload directory
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    console.log('[Multer] Generated filename:', `${uniqueSuffix}-${file.originalname}`);
-    cb(null, `${uniqueSuffix}-${file.originalname}`);
+    cb(null, `${uniqueSuffix}-${file.originalname}`); // Generate a unique filename
   },
 });
 
@@ -26,8 +24,7 @@ const upload = multer({ storage });
 // Middleware for handling multer errors
 const handleMulterErrors = (error, req, res, next) => {
   if (error) {
-    console.error('[MulterError]', error.message);
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message }); // Handle multer-related errors
   }
   next();
 };
@@ -38,10 +35,6 @@ router.use('/auth', authRoutes);
 // Protected upload route with multer and LLM integration
 router.post(
   '/posts/upload',
-  (req, res, next) => {
-    console.log('[API] Upload route hit');
-    next();
-  },
   requireAuth,
   upload.single('file'),
   handleMulterErrors,

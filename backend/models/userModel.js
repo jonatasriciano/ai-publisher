@@ -1,5 +1,3 @@
-// /Users/jonatas/Documents/Projects/ai-publisher/backend/models/userModel.js
-
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -51,7 +49,9 @@ userSchema.index({ email: 1 });
 userSchema.index({ verificationToken: 1 });
 userSchema.index({ resetPasswordToken: 1 });
 
-// Middleware to hash the password before saving
+/**
+ * Middleware to hash the password before saving
+ */
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next(); // Skip hashing if password is not modified
   try {
@@ -62,12 +62,16 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Instance method to compare the provided password with the hashed password
+/**
+ * Instance method to compare the provided password with the hashed password
+ */
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password); // Returns true if passwords match
 };
 
-// Instance method to increment login attempts
+/**
+ * Instance method to increment login attempts
+ */
 userSchema.methods.incrementLoginAttempts = async function() {
   if (this.lockUntil && this.lockUntil < Date.now()) {
     // If the lock has expired, reset loginAttempts and remove lockUntil

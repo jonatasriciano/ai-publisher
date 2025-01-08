@@ -1,6 +1,6 @@
-// /Users/jonatas/Documents/Projects/ai-publisher/backend/models/postModel.js
 const mongoose = require('mongoose');
 
+// Define the schema for posts
 const postSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -47,15 +47,15 @@ const postSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Calculate engagement before saving
+/**
+ * Pre-save hook to calculate engagement based on metadata
+ */
 postSchema.pre('save', function (next) {
-  console.log('[PostModel] Pre-save hook called. Current data:', this);
   this.metadata.engagement = this.metadata.likes + this.metadata.shares + this.metadata.views;
-  console.log('[PostModel] Calculated engagement:', this.metadata.engagement);
   next();
 });
 
-// Add compound index
+// Add compound index for optimized queries
 postSchema.index({ userId: 1, platform: 1 });
 
 module.exports = mongoose.model('Post', postSchema);

@@ -1,123 +1,143 @@
-// validationMiddleware.js
 const validator = require('validator');
 const xss = require('xss');
 
-// Utility function to sanitize input
+/**
+ * Utility function to sanitize input to prevent XSS attacks
+ * @param {string} input - The input string to sanitize
+ * @returns {string} Sanitized input
+ */
 const sanitizeInput = (input) => {
   return xss(validator.trim(input));
 };
 
-// Utility function to validate email
+/**
+ * Utility function to validate email format
+ * @param {string} email - The email to validate
+ * @returns {boolean} True if email is valid, otherwise false
+ */
 const validateEmail = (email) => {
   return validator.isEmail(email);
 };
 
-// Utility function to validate password
+/**
+ * Utility function to validate password strength
+ * @param {string} password - The password to validate
+ * @returns {boolean} True if password meets strength criteria, otherwise false
+ */
 const validatePassword = (password) => {
-  return validator.isLength(password, { min: 6 }) &&
-    /[A-Z]/.test(password) && // Has uppercase
-    /[a-z]/.test(password) && // Has lowercase
-    /[0-9]/.test(password);   // Has number
+  return (
+    validator.isLength(password, { min: 6 }) &&
+    /[A-Z]/.test(password) && // Contains uppercase letter
+    /[a-z]/.test(password) && // Contains lowercase letter
+    /[0-9]/.test(password)    // Contains a number
+  );
 };
 
-// Utility function to validate name
+/**
+ * Utility function to validate name format
+ * @param {string} name - The name to validate
+ * @returns {boolean} True if name is valid, otherwise false
+ */
 const validateName = (name) => {
-  return validator.isLength(name, { min: 2, max: 50 }) &&
-    validator.matches(name, /^[a-zA-Z\s]*$/);
+  return (
+    validator.isLength(name, { min: 2, max: 50 }) &&
+    validator.matches(name, /^[a-zA-Z\s]*$/) // Only letters and spaces
+  );
 };
 
+/**
+ * Middleware to validate registration data
+ */
 const validateRegistration = (req, res, next) => {
   try {
     const { email, password, name } = req.body;
 
-    // Sanitize inputs
-    const sanitizedEmail = sanitizeInput(email);
-    const sanitizedName = sanitizeInput(name);
-
-    // Required fields check
     if (!email || !password || !name) {
       return res.status(400).json({
         error: 'All fields are required',
-        code: 'MISSING_FIELDS'
+        code: 'MISSING_FIELDS',
       });
     }
 
-    // Email validation
+    const sanitizedEmail = sanitizeInput(email);
+    const sanitizedName = sanitizeInput(name);
+
     if (!validateEmail(sanitizedEmail)) {
       return res.status(400).json({
         error: 'Invalid email format',
-        code: 'INVALID_EMAIL'
+        code: 'INVALID_EMAIL',
       });
     }
 
-    // Password validation
     if (!validatePassword(password)) {
       return res.status(400).json({
-        error: 'Password must be at least 6 characters and contain uppercase, lowercase, and number',
-        code: 'WEAK_PASSWORD'
+        error: 'Password must be at least 6 characters and contain uppercase, lowercase, and a number',
+        code: 'WEAK_PASSWORD',
       });
     }
 
-    // Name validation
     if (!validateName(sanitizedName)) {
       return res.status(400).json({
         error: 'Name must be 2-50 characters and contain only letters',
-        code: 'INVALID_NAME'
+        code: 'INVALID_NAME',
       });
     }
 
-    // Add sanitized values to request
     req.sanitizedBody = {
       email: sanitizedEmail,
       password,
-      name: sanitizedName
+      name: sanitizedName,
     };
 
     next();
   } catch (error) {
-    return res.status(500).json({
+    res.status(500).json({
       error: 'Validation error',
-      code: 'VALIDATION_ERROR'
+      code: 'VALIDATION_ERROR',
     });
   }
 };
 
+/**
+ * Middleware to validate login data
+ */
 const validateLogin = (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Sanitize email
-    const sanitizedEmail = sanitizeInput(email);
-
     if (!email || !password) {
       return res.status(400).json({
         error: 'Email and password are required',
-        code: 'MISSING_CREDENTIALS'
+        code: 'MISSING_CREDENTIALS',
       });
     }
+
+    const sanitizedEmail = sanitizeInput(email);
 
     if (!validateEmail(sanitizedEmail)) {
       return res.status(400).json({
         error: 'Invalid email format',
-        code: 'INVALID_EMAIL'
+        code: 'INVALID_EMAIL',
       });
     }
 
-    // Add sanitized values to request
     req.sanitizedBody = {
       email: sanitizedEmail,
-      password
+      password,
     };
 
     next();
   } catch (error) {
-    return res.status(500).json({
+    res.status(500).json({
       error: 'Validation error',
-      code: 'VALIDATION_ERROR'
+      code: 'VALIDATION_ERROR',
     });
   }
 };
 
+/**
+ * Middleware to validate post creation data
+ */
 const validatePostCreation = (req, res, next) => {
   try {
     const { platform, caption } = req.body;
@@ -125,7 +145,7 @@ const validatePostCreation = (req, res, next) => {
     if (!platform || !caption) {
       return res.status(400).json({
         error: 'Platform and caption are required',
-        code: 'MISSING_FIELDS'
+        code: 'MISSING_FIELDS',
       });
     }
 
@@ -134,27 +154,27 @@ const validatePostCreation = (req, res, next) => {
     if (!validator.isLength(sanitizedCaption, { min: 1, max: 2000 })) {
       return res.status(400).json({
         error: 'Caption must be between 1 and 2000 characters',
-        code: 'INVALID_CAPTION'
+        code: 'INVALID_CAPTION',
       });
     }
 
     if (!['LinkedIn', 'Twitter', 'Facebook'].includes(platform)) {
       return res.status(400).json({
         error: 'Invalid platform',
-        code: 'INVALID_PLATFORM'
+        code: 'INVALID_PLATFORM',
       });
     }
 
     req.sanitizedBody = {
       platform,
-      caption: sanitizedCaption
+      caption: sanitizedCaption,
     };
 
     next();
   } catch (error) {
-    return res.status(500).json({
+    res.status(500).json({
       error: 'Validation error',
-      code: 'VALIDATION_ERROR'
+      code: 'VALIDATION_ERROR',
     });
   }
 };

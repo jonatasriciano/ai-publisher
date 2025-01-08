@@ -7,30 +7,13 @@ require('dotenv').config();
 
 const app = express();
 
-// Debug: Startup logs
-console.log('[Server] Starting...');
-console.log('[Server] Environment:', process.env.NODE_ENV || 'development');
-
-// Enhanced logging middleware
-app.use((req, res, next) => {
-  console.log(`[Request] ${req.method} ${req.url}`);
-  console.log('[Headers]', req.headers);
-  console.log('[Query]', req.query);
-  res.on('finish', () => {
-    console.log('[Response Headers]', res.getHeaders());
-  });
-  next();
-});
-
 // CORS Configuration
 const corsOptions = {
   origin: (origin, callback) => {
-    const allowedOrigins = [process.env.FRONTEND_URL || 'http://localhost:3000'];
+    const allowedOrigins = [process.env.FRONTEND_URL];
     if (allowedOrigins.includes(origin) || !origin) {
-      console.log(`[CORS] Allowed Origin: ${origin || 'Direct Request'}`);
       callback(null, true);
     } else {
-      console.error(`[CORS] Blocked Origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -43,7 +26,6 @@ app.use(cors(corsOptions));
 
 // Explicitly handle OPTIONS preflight requests
 app.options('*', cors(corsOptions), (req, res) => {
-  console.log('[CORS] Preflight request handled.');
   res.sendStatus(200);
 });
 
@@ -61,15 +43,10 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // MongoDB connection setup
 const connectDB = async () => {
   try {
-    console.log('[MongoDB] Connecting...');
     await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
-    });
-
-    mongoose.connection.on('connected', () => {
-      console.log('[MongoDB] Connection established.');
     });
 
     mongoose.connection.on('error', (err) => {
@@ -77,7 +54,7 @@ const connectDB = async () => {
     });
 
     mongoose.connection.on('disconnected', () => {
-      console.log('[MongoDB] Disconnected.');
+      console.error('[MongoDB] Disconnected.');
     });
   } catch (err) {
     console.error('[MongoDB] Connection error:', err.message);
@@ -89,7 +66,7 @@ connectDB();
 // Mount API routes
 app.use('/api', apiRoutes);
 
-// 404 handler
+// 404 handler for unmatched routes
 app.use((req, res) => {
   console.error(`[404] Route not found: ${req.method} ${req.url}`);
   res.status(404).json({
@@ -99,7 +76,7 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler
+// Global error handler for unexpected errors
 app.use((err, req, res, next) => {
   console.error(`[Error] ${err.message}`);
   res.status(err.status || 500).json({
@@ -108,8 +85,8 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Start the server
 const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => {
   console.log(`[Server] Listening on http://localhost:${PORT}`);
-  console.log(`[CORS] Allowed Origin: ${process.env.FRONTEND_URL}`);
 });

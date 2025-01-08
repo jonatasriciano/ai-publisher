@@ -1,33 +1,48 @@
 const Post = require('../models/postModel');
 
-const createPost = async ({ userId, platform, filePath, caption, tags }) => {
-  console.log('[CreatePost] Creating post with data:', {
-    userId,
-    platform,
-    filePath,
-    caption,
-    tags,
-  });
+/**
+ * Create a new post
+ * @param {Object} postData - The data required to create a new post.
+ * @param {string} postData.userId - ID of the user creating the post.
+ * @param {string} postData.platform - Platform for the post (e.g., LinkedIn, Twitter).
+ * @param {string} postData.filePath - Path to the uploaded file.
+ * @param {string} postData.caption - Caption for the post.
+ * @param {string} postData.description - Description for the post.
+ * @param {Array} postData.tags - Tags associated with the post.
+ * @returns {Object} The saved post document.
+ */
+const createPost = async ({ userId, platform, filePath, caption, description, tags }) => {
+  try {
+    const post = new Post({
+      userId,
+      platform,
+      filePath,
+      caption,
+      description,
+      tags,
+      status: 'pending',
+    });
 
-  const post = new Post({
-    userId,
-    platform,
-    filePath,
-    caption,
-    tags,
-    status: 'pending',
-  });
-
-  const savedPost = await post.save();
-  console.log('[CreatePost] Post saved:', savedPost);
-  return savedPost;
+    const savedPost = await post.save();
+    return savedPost;
+  } catch (error) {
+    console.error('[CreatePost] Error creating post:', error.message);
+    throw new Error('Failed to create post');
+  }
 };
 
 /**
- * Get all posts for a user
+ * Get all posts for a specific user
+ * @param {string} userId - The ID of the user whose posts should be retrieved.
+ * @returns {Array} List of posts for the user, sorted by creation date.
  */
 const getPostsForUser = async (userId) => {
-  return await Post.find({ userId }).sort({ createdAt: -1 });
+  try {
+    return await Post.find({ userId }).sort({ createdAt: -1 });
+  } catch (error) {
+    console.error('[GetPostsForUser] Error retrieving posts:', error.message);
+    throw new Error('Failed to fetch posts for user');
+  }
 };
 
 module.exports = { createPost, getPostsForUser };
