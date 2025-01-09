@@ -92,19 +92,26 @@ function Upload() {
   };
 
   const handleApprove = async (postId) => {
+    setError('');
+    setLoading(true);
+  
     try {
       const response = await axios.post(
         `${API_URL}/api/posts/${postId}/approve`,
-        {},
+        {}, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
+  
       const updatedPost = response.data;
-      setUploads((prev) =>
-        prev.map((upload) => (upload._id === postId ? updatedPost : upload))
+      setUploads((prevUploads) =>
+        prevUploads.map((upload) => (upload._id === postId ? updatedPost : upload))
       );
-    } catch (error) {
-      console.error('[Approve Error]', error);
-      setError('Failed to approve the post.');
+  
+      setSuccess('Post approved successfully!');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to approve post');
+    } finally {
+      setLoading(false);
     }
   };
 

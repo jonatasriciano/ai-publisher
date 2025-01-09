@@ -121,3 +121,33 @@ body {
   opacity: 0;
   transition: opacity 200ms ease-out;
 }
+
+/* Default Light Theme */
+body[data-theme='light'] {
+  --background-color: #ffffff;
+  --text-color: #000000;
+  --card-background: #f9f9f9;
+  --header-background: #f1f1f1;
+}
+
+/* Dark Theme */
+body[data-theme='dark'] {
+  --background-color: #121212;
+  --text-color: #ffffff;
+  --card-background: #1e1e1e;
+  --header-background: #242424;
+}
+
+/* Apply Variables */
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.card {
+  background-color: var(--card-background);
+}
+
+header {
+  background-color: var(--header-background);
+}

@@ -57,6 +57,9 @@ router.get('/posts', requireAuth, postController.getPosts);
 router.get('/posts/:postId', requireAuth, postController.getPostById);
 router.get('/approval/:postId', requireAuth, postController.getPostById);
 router.get('/edit/:postId', requireAuth, postController.getPostById);
+router.put('/posts/:postId', requireAuth, postController.updatePost);
+router.post('/posts/:postId/approve', requireAuth, postController.approvePost);
+
 
 // Default fallback for unmatched routes
 router.use((req, res) => {

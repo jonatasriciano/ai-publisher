@@ -1,4 +1,4 @@
-const { createPost, getPostsForUser, getPostByIdFromDB } = require('../services/postService');
+const { createPost, getPostsForUser, getPostByIdFromDB, updatePostInDB, approvePostById } = require('../services/postService');
 const { generateCaptionAndTags } = require('../services/llmService');
 
 /**
@@ -81,22 +81,50 @@ exports.getPostById = async (req, res) => {
 
 exports.updatePost = async (req, res) => {
   try {
-    const { postId } = req.params;
-    const { platform, caption, tags, description } = req.body;
+    const { postId } = req.params; // Extract postId from the URL
+    const { platform, caption, tags, description } = req.body; // Extract updated data from the request body
 
-    const updatedPost = await Post.findByIdAndUpdate(
-      postId,
-      { platform, caption, tags, description },
-      { new: true }
-    );
+    if (!postId) {
+      return res.status(400).json({ error: 'Post ID is required' });
+    }
+
+    // Update the post in the database
+    const updatedPost = await updatePostInDB(postId, {
+      platform,
+      caption,
+      tags,
+      description,
+    });
 
     if (!updatedPost) {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    res.json(updatedPost);
+    res.status(200).json(updatedPost);
   } catch (error) {
     console.error('[UpdatePost] Error updating post:', error.message);
-    res.status(500).json({ error: 'Failed to update post' });
+    res.status(500).json({ error: 'Failed to update post', details: error.message });
+  }
+};
+
+exports.approvePost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    // Validação básica
+    if (!postId) {
+      return res.status(400).json({ error: 'Post ID is required' });
+    }
+
+    // Aprovar o post usando o serviço
+    const updatedPost = await approvePostById(postId, req.user.userId); 
+    if (!updatedPost) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    res.status(200).json(updatedPost);
+  } catch (error) {
+    console.error('[ApprovePost] Error:', error.message);
+    res.status(500).json({ error: 'Failed to approve post' });
   }
 };
