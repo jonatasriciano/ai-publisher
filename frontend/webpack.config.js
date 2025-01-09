@@ -16,6 +16,9 @@ module.exports = {
     port: 3000, // Port for the development server
     historyApiFallback: true, // SPA routing support
     open: true, // Automatically open the app in the browser
+    client: {
+      logging: 'none', // Silences WDS messages in the browser console
+    },
   },
   module: {
     rules: [
@@ -43,6 +46,4 @@ module.exports = {
       'process.env': JSON.stringify(process.env),
     }),
   ],
-
-  
 };

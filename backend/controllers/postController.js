@@ -51,13 +51,10 @@ exports.uploadPost = async (req, res) => {
  */
 exports.getPosts = async (req, res) => {
   try {
-    // Validate the user ID
     if (!req.user || !req.user.userId) {
-      console.error('[GetPosts Error] User ID missing from request');
       return res.status(400).json({ error: 'User ID missing from request' });
     }
 
-    // Fetch posts for the user
     const posts = await getPostsForUser(req.user.userId);
     res.status(200).json(posts);
   } catch (error) {

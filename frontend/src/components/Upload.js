@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from './LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 function Upload() {
     const [file, setFile] = useState(null);
@@ -12,6 +14,8 @@ function Upload() {
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState('');
+    const [showModal, setShowModal] = useState(false);
+
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
     const token = localStorage.getItem('token');
@@ -30,12 +34,15 @@ function Upload() {
 
     const fetchUploads = async () => {
         try {
+            setLoading(true);
             const response = await axios.get(`${API_URL}/api/posts`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setUploads(response.data);
-        } catch {
+        } catch (error) {
             setError('Failed to fetch uploads');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -66,110 +73,140 @@ function Upload() {
                 body: formData,
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                setUploads((prev) => [...prev, data]);
-                setFile(null);
-                setCaption('');
-            } else {
+            if (!response.ok) {
                 const errorData = await response.json();
-                setError(errorData.error || 'Upload failed');
+                throw new Error(errorData.error || 'Server error occurred during upload.');
             }
+
+            const data = await response.json();
+            setUploads((prev) => [...prev, data]);
+            setFile(null);
+            setCaption('');
+            setShowModal(false);
         } catch (err) {
-            setError(err.message || 'Upload failed');
+            setError(err.message || 'An unexpected error occurred.');
         } finally {
             setLoading(false);
         }
     };
 
+    const handleApprove = async (postId) => {
+        try {
+            const response = await axios.post(
+                `${API_URL}/api/posts/${postId}/approve`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            const updatedPost = response.data;
+            setUploads((prev) => prev.map((upload) => (upload._id === postId ? updatedPost : upload)));
+        } catch (error) {
+            console.error('[Approve Error]', error);
+            setError('Failed to approve the post.');
+        }
+    };
+
+    const handleDelete = async (postId) => {
+        try {
+            await axios.delete(`${API_URL}/api/posts/${postId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setUploads((prev) => prev.filter((upload) => upload._id !== postId));
+        } catch (error) {
+            console.error('[Delete Error]', error);
+            setError('Failed to delete the post.');
+        }
+    };
+
     return (
         <div className="container mt-5">
+            {/* Header */}
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2 className="text-primary">Upload Dashboard</h2>
+                <button
+                    className="btn btn-primary d-flex align-items-center"
+                    onClick={() => setShowModal(true)}
+                >
+                    <i className="fas fa-upload me-2"></i> New Upload
+                </button>
+            </div>
+
+            {/* Upload List */}
             <div className="row">
-                <div className="col-md-6">
-                    <div className="card shadow">
+                <div className="col-md-12">
+                    <div className="card shadow-sm border-0">
                         <div className="card-body">
-                            <h3 className="card-title">Upload Content</h3>
-                            {error && <div className="alert alert-danger" role="alert">{error}</div>}
-
-                            <form onSubmit={handleUpload}>
-                                <div className="mb-3">
-                                    <label className="form-label">Platform</label>
-                                    <select
-                                        className="form-select"
-                                        value={platform}
-                                        onChange={(e) => setPlatform(e.target.value)}
-                                        aria-label="Select platform for upload"
-                                    >
-                                        <option value="LinkedIn">LinkedIn</option>
-                                        <option value="Twitter">Twitter</option>
-                                        <option value="Facebook">Facebook</option>
-                                    </select>
-                                </div>
-
-                                <div className="mb-3">
-                                    <label className="form-label">Caption</label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        placeholder="Enter caption"
-                                        value={caption}
-                                        onChange={(e) => setCaption(e.target.value)}
-                                        aria-label="Enter caption for upload"
-                                    />
-                                </div>
-
-                                <div className="mb-3">
-                                    <label className="form-label">File</label>
-                                    <input
-                                        type="file"
-                                        className="form-control"
-                                        accept={ALLOWED_FILE_TYPES.join(',')}
-                                        onChange={(e) => setFile(e.target.files[0])}
-                                        aria-label="Choose file for upload"
-                                    />
-                                </div>
-
-                                {progress > 0 && (
-                                    <div className="mb-3">
-                                        <div className="progress">
-                                            <div className="progress-bar" style={{ width: `${progress}%` }}>
-                                                {progress}%
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary w-100"
-                                    disabled={loading || !file}
-                                    aria-disabled={loading || !file}
-                                >
-                                    {loading ? <LoadingSpinner /> : 'Upload'}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="col-md-6">
-                    <div className="card shadow">
-                        <div className="card-body">
-                            <h3 className="card-title">Recent Uploads</h3>
+                            <h3 className="card-title text-secondary">Uploads</h3>
+                            {loading && <LoadingSpinner />}
+                            {error && <div className="alert alert-danger">{error}</div>}
                             {uploads.length > 0 ? (
-                                <ul className="list-group">
-                                    {uploads.map((upload) => (
-                                        <li
-                                            key={upload._id}
-                                            className="list-group-item d-flex justify-content-between align-items-center"
-                                        >
-                                            <span>{upload.platform}</span>
-                                            <span className={`badge bg-${upload.status === 'pending' ? 'warning' : 'success'}`}>
-                                                {upload.status}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
+                                <table className="table table-hover table-bordered">
+                                    <thead className="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Platform</th>
+                                            <th>Status</th>
+                                            <th>Uploader</th>
+                                            <th>Uploaded</th>
+                                            <th>Generated caption</th>
+                                            <th>Generated tags</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {uploads.map((upload, index) => (
+                                            <tr key={upload._id}>
+                                                <td>{index + 1}</td>
+                                                <td>{upload.platform}</td>
+                                                <td>
+                                                    <span
+                                                        className={`badge bg-${
+                                                            upload.status === 'pending'
+                                                                ? 'warning'
+                                                                : upload.status === 'team_approved'
+                                                                ? 'info'
+                                                                : upload.status === 'client_approved'
+                                                                ? 'success'
+                                                                : 'secondary'
+                                                        }`}
+                                                    >
+                                                        {upload.status}
+                                                    </span>
+                                                </td>
+                                                <td>{upload.userId?.name || 'Unknown'}</td>
+                                                <td>{new Date(upload.createdAt).toLocaleString().toUpperCase()}</td>
+                                                <td>{upload.caption.length > 0 ? <i className="fas fa-check"></i> : <i className="fas fa-block"></i>}</td>
+                                                <td>{upload.tags.length > 0 ? upload.tags.length : '-'}</td>
+                                                <td>
+                                                    <button
+                                                        className="btn btn-sm btn-info me-2"
+                                                        onClick={() => navigate(`/approval/${upload._id}`)}
+                                                    >
+                                                        <i className="fas fa-eye"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-sm btn-warning me-2"
+                                                        onClick={() => navigate(`/edit/${upload._id}`)}
+                                                    >
+                                                        <i className="fas fa-edit"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-sm btn-success me-2"
+                                                        onClick={() => handleApprove(upload._id)}
+                                                        disabled={upload.status !== 'pending'}
+                                                    >
+                                                        <i className="fas fa-check"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-sm btn-danger"
+                                                        onClick={() => handleDelete(upload._id)}
+                                                    >
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             ) : (
                                 <p className="text-center text-muted">No uploads yet</p>
                             )}
@@ -177,6 +214,79 @@ function Upload() {
                     </div>
                 </div>
             </div>
+
+            {/* Modal */}
+            {showModal && (
+                <div className="modal fade show d-block" tabIndex="-1">
+                    <div className="modal-dialog modal-lg">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">New Upload</h5>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => setShowModal(false)}
+                                ></button>
+                            </div>
+                            <div className="modal-body">
+                                <form onSubmit={handleUpload}>
+                                    <div className="mb-3">
+                                        <label className="form-label">Platform</label>
+                                        <select
+                                            className="form-select"
+                                            value={platform}
+                                            onChange={(e) => setPlatform(e.target.value)}
+                                        >
+                                            <option value="LinkedIn">LinkedIn</option>
+                                            <option value="Twitter">Twitter</option>
+                                            <option value="Facebook">Facebook</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="mb-3">
+                                        <label className="form-label">Caption</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            value={caption}
+                                            onChange={(e) => setCaption(e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div className="mb-3">
+                                        <label className="form-label">File</label>
+                                        <input
+                                            type="file"
+                                            className="form-control"
+                                            accept={ALLOWED_FILE_TYPES.join(',')}
+                                            onChange={(e) => setFile(e.target.files[0])}
+                                        />
+                                    </div>
+
+                                    {progress > 0 && (
+                                        <div className="progress mb-3">
+                                            <div
+                                                className="progress-bar"
+                                                style={{ width: `${progress}%` }}
+                                            >
+                                                {progress}%
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary w-100"
+                                        disabled={loading || !file}
+                                    >
+                                        {loading ? <LoadingSpinner /> : 'Upload'}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

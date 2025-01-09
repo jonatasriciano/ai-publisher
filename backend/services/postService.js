@@ -38,7 +38,9 @@ const createPost = async ({ userId, platform, filePath, caption, description, ta
  */
 const getPostsForUser = async (userId) => {
   try {
-    return await Post.find({ userId }).sort({ createdAt: -1 });
+    return await Post.find({ userId })
+    .sort({ createdAt: -1 })
+    .populate('userId', 'name email');
   } catch (error) {
     console.error('[GetPostsForUser] Error retrieving posts:', error.message);
     throw new Error('Failed to fetch posts for user');
