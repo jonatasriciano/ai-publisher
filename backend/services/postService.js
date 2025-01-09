@@ -47,4 +47,23 @@ const getPostsForUser = async (userId) => {
   }
 };
 
-module.exports = { createPost, getPostsForUser };
+/**
+ * Get a single post by its ID
+ * @param {string} postId - The ID of the post to retrieve.
+ * @returns {Object|null} The post document, or null if not found.
+ */
+const getPostByIdFromDB = async (postId) => {
+  try {
+    const post = await Post.findById(postId).populate('userId', 'name email');
+    return post;
+  } catch (error) {
+    console.error('[GetPostByIdFromDB] Error fetching post by ID:', error.message);
+    throw new Error('Failed to fetch post by ID');
+  }
+};
+
+module.exports = {
+  createPost,
+  getPostsForUser,
+  getPostByIdFromDB,
+};

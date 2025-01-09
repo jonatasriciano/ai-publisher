@@ -5,6 +5,7 @@ const { requireAuth } = require('../middleware/authMiddleware');
 const postController = require('../controllers/postController');
 const multer = require('multer');
 const path = require('path');
+const crypto = require('crypto');
 
 // Configure multer storage
 const storage = multer.diskStorage({
@@ -13,9 +14,17 @@ const storage = multer.diskStorage({
     cb(null, uploadPath); // Specify the upload directory
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${uniqueSuffix}-${file.originalname}`); // Generate a unique filename
-  },
+    const timestamp = Date.now();
+    const uniqueHash = crypto
+      .createHash('sha256') // Generate a SHA-256 hash
+      .update(`${timestamp}-${file.originalname}-${Math.random()}`) // Use timestamp, original filename, and a random value
+      .digest('hex'); // Convert to a hexadecimal string
+  
+    const extension = file.originalname.split('.').pop(); // Extract file extension
+    const hashedFilename = `${uniqueHash}-${timestamp}.${extension}`; // Combine hash and extension
+  
+    cb(null, hashedFilename); // Return the generated filename
+  }
 });
 
 // Create multer upload instance
@@ -32,7 +41,7 @@ const handleMulterErrors = (error, req, res, next) => {
 // Mount authentication routes
 router.use('/auth', authRoutes);
 
-// Protected upload route with multer and LLM integration
+// Upload post route
 router.post(
   '/posts/upload',
   requireAuth,
@@ -41,7 +50,17 @@ router.post(
   postController.uploadPost
 );
 
-// Protected route to get posts
+// Get all posts route
 router.get('/posts', requireAuth, postController.getPosts);
+
+// Get post by ID route
+router.get('/posts/:postId', requireAuth, postController.getPostById);
+router.get('/approval/:postId', requireAuth, postController.getPostById);
+router.get('/edit/:postId', requireAuth, postController.getPostById);
+
+// Default fallback for unmatched routes
+router.use((req, res) => {
+  res.status(404).json({ error: 'API route not found' });
+});
 
 module.exports = router;

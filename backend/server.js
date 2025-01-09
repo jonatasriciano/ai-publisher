@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const mongoose = require('mongoose');
+const path = require('path');
 const apiRoutes = require('./routes/api');
 require('dotenv').config();
 
@@ -40,7 +41,6 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// MongoDB connection setup
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI, {
@@ -63,6 +63,18 @@ const connectDB = async () => {
 };
 connectDB();
 
+
+// Serve static files for uploaded content
+app.use(
+  '/uploads',
+  express.static(path.join(__dirname, 'uploads'), {
+    setHeaders: (res, filePath) => {
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL);
+    },
+  })
+);
+
 // Mount API routes
 app.use('/api', apiRoutes);
 
@@ -76,7 +88,7 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler for unexpected errors
+// Global error handler
 app.use((err, req, res, next) => {
   console.error(`[Error] ${err.message}`);
   res.status(err.status || 500).json({
@@ -88,5 +100,5 @@ app.use((err, req, res, next) => {
 // Start the server
 const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => {
-  console.log(`[Server] Listening on ${process.env.BACKEND_URL}`);
+  console.log(`[Server] Listening on port ${PORT}`);
 });

@@ -1,8 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './components/Login';
-import Register from './components/Register';
-import Upload from './components/Upload';
 import Welcome from './components/Welcome'; 
+import Register from './components/Register';
+import Login from './components/Login';
+import Upload from './components/Upload';
+import Approval from './components/Approval';
+import EditPost from './components/EditPost';
 import { useAuth } from './context/AuthContext';
 
 // Component for private routes
@@ -10,7 +12,7 @@ const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) return <div>Loading...</div>; 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/welcome" replace />;
   return children;
 };
 
@@ -31,6 +33,8 @@ const AppRoutes = () => (
           </PrivateRoute>
         }
       />
+      <Route path="/approval/:postId" element={<Approval />} />
+      <Route path="/edit/:postId" element={<EditPost />} />
 
       {/* Catch-all for undefined routes */}
       <Route path="*" element={<Navigate to="/" replace />} />
