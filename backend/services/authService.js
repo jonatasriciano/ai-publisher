@@ -2,6 +2,7 @@ const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { sendEmail, templates } = require('./emailService');
 
 /**
  * Register a new user
@@ -20,6 +21,21 @@ const registerUser = async ({ name, email, password }) => {
 
     // Generate a verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
+
+    // Prepare email options
+    const options = {
+      to: email,
+      ...templates.welcome({ verificationToken }),
+    };
+
+    // Send email
+    try {
+      console.log('[RegisterUser] Sending welcome email to:', email);
+      await sendEmail(options);
+    } catch (emailError) {
+      console.error('[RegisterUser] Failed to send welcome email:', emailError.message);
+      throw new Error('Failed to send welcome email, please try again.');
+    }
 
     // Create a new user
     const user = await User.create({
@@ -71,4 +87,32 @@ const authenticateUser = async ({ email, password }) => {
   }
 };
 
-module.exports = { registerUser, authenticateUser };
+
+/**
+ * Verify email using the verification token
+ *
+ * @param {string} verificationToken - The token to verify
+ * @throws {Error} - If the token is invalid or expired
+ */
+const verifyEmailToken = async (verificationToken) => {
+  try {
+    const user = await User.findOne({
+      verificationToken,
+      verificationExpires: { $gt: Date.now() }, // Ensure the token is still valid
+    });
+
+    if (!user) {
+      throw new Error('Invalid or expired verification token');
+    }
+
+    user.emailVerified = true;
+    user.verificationToken = undefined; // Clear the token
+    user.verificationExpires = undefined; // Clear expiration
+    await user.save();
+  } catch (error) {
+    console.error('[VerifyEmailToken Error]', error.message);
+    throw new Error('Failed to verify email');
+  }
+};
+
+module.exports = { registerUser, authenticateUser, verifyEmailToken };

@@ -37,6 +37,10 @@ const templates = {
     subject: 'Reset Password',
     html: `Click <a href="${process.env.FRONTEND_URL}/reset-password/${token}">here</a> to reset your password`,
   }),
+  postApproval: (post) => ({
+    subject: 'Your post has been approved',
+    html: `Your post has been approved. Details: ${JSON.stringify(post)}`,
+  }),
 };
 
 /**
@@ -47,20 +51,32 @@ const templates = {
  * @throws {Error} - If email sending fails after all retries
  */
 const sendEmail = async (options) => {
+  console.log(`[SendEmail] Sending email to ${options.to}`);
+  console.log(`[SendEmail] Email content: ${options.html}`);
+  console.log(`[SendEmail] Email subject: ${options.subject}`);
+  // Validate required options
+  if (!options || !options.to || !options.subject || !options.html) {
+    throw new Error('[SendEmail] Missing required email options (to, subject, html).', options);
+  }
+
   const maxRetries = 3; // Maximum number of retry attempts
   let lastError;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      console.log(`[SendEmail] Attempting to send email to ${options.to} (Attempt ${attempt})`);
+
       // Send email using Nodemailer
       const info = await transporter.sendMail({
         from: process.env.EMAIL_FROM, // Sender email address
         ...options, // Merge additional email options
       });
+
+      console.log(`[SendEmail] Email sent successfully to ${options.to} on attempt ${attempt}`);
       return info; // Return email sending result on success
     } catch (error) {
       lastError = error; // Store the last error
-      console.error(`[SendEmail] Attempt ${attempt} failed:`, error.message);
+      console.error(`[SendEmail] Attempt ${attempt} failed for recipient ${options.to}:`, error.message);
 
       if (attempt < maxRetries) {
         // Wait before retrying
@@ -71,7 +87,9 @@ const sendEmail = async (options) => {
 
   // Throw an error if all retries fail
   console.error('[SendEmail] All attempts to send email failed:', lastError.message);
-  throw new Error(`Failed to send email after ${maxRetries} attempts: ${lastError.message}`);
+  throw new Error(
+    `[SendEmail] Failed to send email after ${maxRetries} attempts to recipient ${options.to}: ${lastError.message}`
+  );
 };
 
 module.exports = {

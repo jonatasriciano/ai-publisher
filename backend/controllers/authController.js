@@ -66,3 +66,17 @@ exports.me = async (req, res) => {
     });
   }
 };
+
+/**
+ * Verify email using the verification token
+ */
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { verificationToken } = req.params; // Extract token from URL
+    await verifyEmailToken(verificationToken); // Service to handle verification
+    res.status(200).json({ message: 'Email verified successfully' });
+  } catch (error) {
+    console.error('[VerifyEmail Error]', error.message);
+    res.status(400).json({ error: error.message });
+  }
+};

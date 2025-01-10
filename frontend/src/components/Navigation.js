@@ -1,13 +1,22 @@
 import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import ThemeContext from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const Navigation = () => {
   const { theme, setTheme } = useContext(ThemeContext);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   // Toggle theme between light and dark
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
+
+  // Handle user logout
+  const handleLogout = () => {
+    logout(); // Call the logout function from AuthContext
+    navigate('/login'); // Redirect user to the login page
   };
 
   return (
@@ -53,7 +62,7 @@ const Navigation = () => {
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
-            className="btn btn-outline-secondary d-flex align-items-center"
+            className="btn btn-outline-secondary d-flex align-items-center me-3"
             aria-label={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
           >
             {theme === 'light' ? (
@@ -62,6 +71,15 @@ const Navigation = () => {
               <i className="fas fa-sun me-2"></i>
             )}
             {theme === 'light' ? 'Dark' : 'Light'} Mode
+          </button>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="btn btn-outline-danger d-flex align-items-center"
+            aria-label="Logout"
+          >
+            <i className="fas fa-sign-out-alt me-2"></i>Logout
           </button>
         </div>
       </div>

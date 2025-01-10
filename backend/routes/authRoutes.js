@@ -48,5 +48,6 @@ router.post(
 
 // Protected route to get the authenticated user's profile
 router.get('/me', requireAuth, authController.me);
+router.get('/verify/:verificationToken', authController.verifyEmail);
 
 module.exports = router;

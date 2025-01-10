@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Navigation from './components/Navigation';
 import Register from './components/Register';
+import VerifyEmail from './components/VerifyEmail';
 import Login from './components/Login';
 import Upload from './components/Upload';
 import Approval from './components/Approval';
@@ -23,6 +24,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Navigate to="/upload" />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/verify/:verificationToken" element={<VerifyEmail />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/upload" element={<Upload />} />
                   <Route path="/approval/:postId" element={<Approval />} />

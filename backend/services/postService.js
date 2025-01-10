@@ -1,5 +1,5 @@
 const Post = require('../models/postModel');
-const { sendEmail } = require('./emailService');
+const { sendEmail, templates } = require('./emailService');
 
 /**
  * Create a new post
@@ -80,10 +80,13 @@ const updatePostInDB = async (postId, updateData) => {
 
 const approvePostById = async (postId, approvedBy) => {
   try {
+    // Retrieve the post and populate uploader's email and name
     const post = await Post.findById(postId).populate('userId', 'email name');
-    if (!post) {
-      return null; // Post not found
+    if (!post || !post.userId || !post.userId.email) {
+      throw new Error('Email not found for the uploader');
     }
+
+    console.log(`[ApprovePostById] Post found for email: ${post.userId.email}`);
 
     // Update post status and metadata
     post.status = 'team_approved';
@@ -94,28 +97,22 @@ const approvePostById = async (postId, approvedBy) => {
 
     const updatedPost = await post.save();
 
-    // Send email notification to the uploader
-    const emailSubject = 'Your Post Has Been Approved!';
-    const emailHtml = `
-      <h1>Congratulations, ${post.userId.name}!</h1>
-      <p>Your post has been approved by our team. Here are the details:</p>
-      <ul>
-        <li><strong>Platform:</strong> ${post.platform}</li>
-        <li><strong>Caption:</strong> ${post.caption}</li>
-        <li><strong>Status:</strong> ${post.status}</li>
-        <li><strong>Tags:</strong> ${post.tags.join(', ')}</li>
-      </ul>
-      <p>You can review your post <a href="${process.env.FRONTEND_URL}/approval/${postId}">here</a>.</p>
-      <p>Thank you for contributing!</p>
-    `;
+    // Send email using the generated template
+    await sendEmail({
+      to: post.userId.email,
+      ...templates.welcome({ verificationToken }),
+    });
 
-    await sendEmail(post.userId.email, emailSubject, emailHtml);
-
+    console.log(`[ApprovePostById] Email sent successfully to ${post.userId.email}`);
     return updatedPost;
   } catch (error) {
     console.error('[ApprovePostById] Error approving post:', error.message);
     throw new Error('Failed to approve post');
   }
+};
+
+module.exports = {
+  approvePostById,
 };
 
 module.exports = {
