@@ -59,6 +59,7 @@ router.get('/approval/:postId', requireAuth, postController.getPostById);
 router.get('/edit/:postId', requireAuth, postController.getPostById);
 router.put('/posts/:postId', requireAuth, postController.updatePost);
 router.post('/posts/:postId/approve', requireAuth, postController.approvePost);
+router.delete('/posts/:postId', requireAuth, postController.deletePost);
 
 
 // Default fallback for unmatched routes

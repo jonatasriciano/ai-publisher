@@ -1,5 +1,7 @@
 const Post = require('../models/postModel');
 const { sendEmail, templates } = require('./emailService');
+const path = require('path');
+const fs = require('fs');
 
 /**
  * Create a new post
@@ -100,7 +102,7 @@ const approvePostById = async (postId, approvedBy) => {
     // Send email using the generated template
     await sendEmail({
       to: post.userId.email,
-      ...templates.welcome({ verificationToken }),
+      ...templates.postApproval(), // Removed unnecessary verificationToken
     });
 
     console.log(`[ApprovePostById] Email sent successfully to ${post.userId.email}`);
@@ -111,8 +113,28 @@ const approvePostById = async (postId, approvedBy) => {
   }
 };
 
-module.exports = {
-  approvePostById,
+const deletePostById = async (postId) => {
+  try {
+    const post = await Post.findById(postId);
+
+    if (!post) {
+      return null; // Post not found
+    }
+
+    // Delete associated file if it exists
+    if (post.filePath) {
+      const fullPath = path.join(__dirname, '../uploads', post.filePath);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath); // Remove file
+      }
+    }
+
+    // Delete post from the database
+    return await Post.findByIdAndDelete(postId);
+  } catch (error) {
+    console.error('[DeletePostById] Error deleting post:', error.message);
+    throw new Error('Failed to delete post');
+  }
 };
 
 module.exports = {
@@ -121,4 +143,5 @@ module.exports = {
   getPostByIdFromDB,
   updatePostInDB,
   approvePostById,
+  deletePostById
 };

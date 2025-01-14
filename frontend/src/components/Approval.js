@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 function Approval() {
   const { postId } = useParams(); // Get the postId from the URL
+  const navigate = useNavigate(); // React Router's navigate function
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false); // Loading state for actions
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -31,6 +33,51 @@ function Approval() {
       setError(err.response?.data?.error || 'Failed to fetch post');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/posts/${postId}/approve`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setPost((prevPost) => ({ ...prevPost, status: 'approved' }));
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to approve post');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdate = () => {
+    navigate(`/edit/${postId}`); // Redirect to the edit page
+  };
+
+  const handleBackToList = () => {
+    navigate('/approval'); // Redirect to the list of approvals
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/posts/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert('Post deleted successfully.');
+      navigate('/approval'); // Redirect to the list after deletion
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete post');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -122,6 +169,48 @@ function Approval() {
             <blockquote className="blockquote">
               <p>{post.caption}</p>
             </blockquote>
+
+            <p>
+              <strong>Description:</strong>
+            </p>
+            <blockquote className="blockquote">
+              <p>{post.description}</p>
+            </blockquote>
+          </div>
+          <div className="card-footer d-flex justify-content-between">
+            <button
+              className="btn btn-secondary"
+              onClick={handleBackToList} // Back to list button handler
+            >
+              <i className="fas fa-arrow-left me-2"></i> Back to List
+            </button>
+            <div>
+              <button
+                className="btn btn-success me-3"
+                onClick={handleApprove}
+                disabled={actionLoading || post.status === 'approved'}
+              >
+                {actionLoading ? (
+                  <span className="spinner-border spinner-border-sm" role="status"></span>
+                ) : (
+                  'Approve'
+                )}
+              </button>
+              <button
+                className="btn btn-primary me-3"
+                onClick={handleUpdate}
+                disabled={actionLoading}
+              >
+                Update
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={handleDelete} // Delete button handler
+                disabled={actionLoading}
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       ) : (

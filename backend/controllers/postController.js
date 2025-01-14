@@ -1,4 +1,4 @@
-const { createPost, getPostsForUser, getPostByIdFromDB, updatePostInDB, approvePostById } = require('../services/postService');
+const { createPost, getPostsForUser, getPostByIdFromDB, updatePostInDB, approvePostById, deletePostById } = require('../services/postService');
 const { generateCaptionAndTags } = require('../services/llmService');
 
 /**
@@ -127,5 +127,26 @@ exports.approvePost = async (req, res) => {
   } catch (error) {
     console.error('[ApprovePost] Error:', error.message);
     res.status(500).json({ error: 'Failed to approve post' });
+  }
+};
+
+exports.deletePost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    if (!postId) {
+      return res.status(400).json({ error: 'Post ID is required' });
+    }
+
+    const deletedPost = await deletePostById(postId);
+
+    if (!deletedPost) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    res.status(200).json({ message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error('[DeletePost] Error deleting post:', error.message);
+    res.status(500).json({ error: 'Failed to delete post', details: error.message });
   }
 };

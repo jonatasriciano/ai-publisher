@@ -39,7 +39,7 @@ const templates = {
   }),
   postApproval: (post) => ({
     subject: 'Your post has been approved',
-    html: `Your post has been approved. Details: ${JSON.stringify(post)}`,
+    html: `Your post has been approved.`,
   }),
 };
 
