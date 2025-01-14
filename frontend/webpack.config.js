@@ -6,25 +6,30 @@ module.exports = {
   devtool: 'source-map',
   entry: './src/index.js', // Main entry file
   output: {
-    path: path.resolve(__dirname, 'dist'), // Output directory
-    filename: 'bundle.js', // Output filename
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'bundle.js',
+    publicPath: '/',
   },
   devServer: {
     static: {
       directory: path.join(__dirname, 'public'), // Static files directory
     },
-    port: 3000, // Port for the development server
-    historyApiFallback: true, // SPA routing support
-    open: true, // Automatically open the app in the browser
+    port: 3000,            // Development server port
+    historyApiFallback: true,
+    open: true,
     client: {
-      logging: 'none', // Silences WDS messages in the browser console
+      logging: 'none',
+    },
+    // Because we want /bundle.js at root level, we match the publicPath here as well
+    devMiddleware: {
+      publicPath: '/',
     },
   },
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/, // Match JavaScript and JSX files
-        exclude: /node_modules/, // Exclude node_modules directory
+        test: /\.(js|jsx)$/,  // Match JavaScript and JSX files
+        exclude: /node_modules/,  // Exclude node_modules directory
         use: {
           loader: 'babel-loader', // Transpile ES6+ and JSX
           options: {
@@ -33,8 +38,8 @@ module.exports = {
         },
       },
       {
-        test: /\.css$/i, // Match CSS files
-        use: ['style-loader', 'css-loader'], // Loaders for CSS files
+        test: /\.css$/i,          // Match CSS files
+        use: ['style-loader', 'css-loader'],
       },
     ],
   },

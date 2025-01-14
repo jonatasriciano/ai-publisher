@@ -55,12 +55,15 @@ async function generatePromptFromGpt(userPrompt, imgUrl, systemPrompt, maxTokens
  *
  * @param {string} prompt - The user prompt to send to Gemini.
  * @param {string} image - The image input for Gemini.
- * @param {number} [maxTokens=150] - Maximum number of tokens for the response.
+ * @param {number} [maxTokens=1000] - Maximum number of tokens for the response.
  * @returns {Object} The generated message and token usage (estimated).
  */
-async function generatePromptFromGemini(prompt, image, maxTokens = 150) {
+async function generatePromptFromGemini(prompt, image, maxTokens = 1000) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      maxTokens: maxTokens,
+    });
     const result = await model.generateContent([prompt, image]);
 
     if (!result || !result.response || !result.response.text) {
@@ -99,7 +102,7 @@ async function generatePromptFromGemini(prompt, image, maxTokens = 150) {
  */
 async function generateCaptionAndTags(file, body, provider = "gemini") {
   try {
-    const { platform, tone, targetAudience, maximumTags } = body;
+    const { platform, guidelines, tone, targetAudience, maximumTags } = body;
     const imagePath = file.path;
     const imageBuffer = await fs.readFile(imagePath);
     const imageBase64 = imageBuffer.toString("base64");
@@ -112,31 +115,22 @@ async function generateCaptionAndTags(file, body, provider = "gemini") {
     };
 
     const prompt = `
-          Generate a social media caption and relevant hashtags for this image.
-          Platform: ${platform}
-          Target Audience: ${targetAudience}
-          Tone: ${tone}
-          Maximum Tags: ${maximumTags}
-
-          Provide your response in JSON format with the following structure:
-          {
-              "caption": "Your generated caption here",
-              "tags": ["tag1", "tag2", "tag3"],
-              "description": "Detailed description of the image"
-          }
+      Develop a caption or long post according to the guidelines adapted for social networks and a set of hashtags relevant to the image provided. Make sure that the results meet the following parameters
+      Guidelines: ${guidelines}
+      Platform: ${platform}
+      Target Audience: ${targetAudience}
+      Tone: ${tone}
+      Maximum Tags: ${maximumTags}
+    
+      Provide your response in JSON format with the following structure:
+      {
+          "caption": "Your generated caption here",
+          "tags": ["tag1", "tag2", "tag3"],
+          "description": "Detailed description of the image"
+      }
       `;
 
-    let result;
-
-    if (provider === "openai") {
-      const systemPrompt = `You are a social media expert`;
-      result = await generatePromptFromGpt(prompt, geminiImage, systemPrompt);
-    } else if (provider === "gemini") {
-      result = await generatePromptFromGemini(prompt, geminiImage);
-    } else {
-      throw new Error("Invalid provider specified. Use 'openai' or 'gemini'.");
-    }
-
+    let result = await generatePromptFromGemini(prompt, geminiImage);
     const message = result.message;
     let caption, tags, description;
 

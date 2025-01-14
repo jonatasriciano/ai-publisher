@@ -9,7 +9,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 function Upload() {
   const [file, setFile] = useState(null);
   const [platform, setPlatform] = useState('LinkedIn');
-  const [caption, setCaption] = useState('');
+  const [guidelines, setGuidelines] = useState('');
   const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -66,7 +66,7 @@ function Upload() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('platform', platform);
-      formData.append('caption', caption);
+      formData.append('guidelines', guidelines);
 
       const response = await fetch(`${API_URL}/api/posts/upload`, {
         method: 'POST',
@@ -82,7 +82,7 @@ function Upload() {
       const data = await response.json();
       setUploads((prev) => [...prev, data]);
       setFile(null);
-      setCaption('');
+      setGuidelines('');
       setShowModal(false);
     } catch (err) {
       setError(err.message || 'An unexpected error occurred.');
@@ -278,12 +278,12 @@ function Upload() {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Caption</label>
+                    <label className="form-label">Guidelines</label>
                     <input
                       type="text"
                       className="form-control"
-                      value={caption}
-                      onChange={(e) => setCaption(e.target.value)}
+                      value={guidelines}
+                      onChange={(e) => setGuidelines(e.target.value)}
                     />
                   </div>
 

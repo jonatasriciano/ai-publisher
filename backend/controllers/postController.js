@@ -28,6 +28,7 @@ exports.uploadPost = async (req, res) => {
       userId: req.user.userId,
       platform: req.body.platform,
       filePath: req.file.path,
+      guidelines: req.body.guidelines,
       caption: llmResponse.caption,
       description: llmResponse.description,
       tags: llmResponse.tags,

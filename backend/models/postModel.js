@@ -13,6 +13,10 @@ const postSchema = new mongoose.Schema({
     enum: ['LinkedIn', 'Twitter', 'Facebook'],
     required: true,
   },
+  guidelines: {
+    type: String,
+    required: false,
+  },
   filePath: {
     type: String,
     required: true,
@@ -26,6 +30,11 @@ const postSchema = new mongoose.Schema({
     type: String,
     maxlength: 100,
   }],
+  description: {
+    type: String,
+    required: false,
+    maxlength: 2000,
+  },
   status: {
     type: String,
     enum: ['pending', 'team_approved', 'client_approved', 'published', 'rejected'],
