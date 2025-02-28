@@ -197,7 +197,7 @@ const deletePostById = async (postId) => {
 };
 
 module.exports = {
-  fetchInstagramFeed, // Now part of postService.js
+  fetchInstagramFeed,
   postComment,
   autoCommentOnFeed,
   createPost,
