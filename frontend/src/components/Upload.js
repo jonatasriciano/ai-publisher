@@ -94,19 +94,19 @@ function Upload() {
   const handleApprove = async (postId) => {
     setError('');
     setLoading(true);
-  
+
     try {
       const response = await axios.post(
         `${API_URL}/api/posts/${postId}/approve`,
-        {}, 
+        {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-  
+
       const updatedPost = response.data;
       setUploads((prevUploads) =>
         prevUploads.map((upload) => (upload._id === postId ? updatedPost : upload))
       );
-  
+
       setSuccess('Post approved successfully!');
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to approve post');
@@ -179,19 +179,17 @@ function Upload() {
                               upload.status === 'pending'
                                 ? 'warning'
                                 : upload.status === 'team_approved'
-                                ? 'info'
-                                : upload.status === 'client_approved'
-                                ? 'success'
-                                : 'secondary'
+                                  ? 'info'
+                                  : upload.status === 'client_approved'
+                                    ? 'success'
+                                    : 'secondary'
                             }`}
                           >
                             {upload.status}
                           </span>
                         </td>
                         <td>{upload.userId?.name || 'Unknown'}</td>
-                        <td>
-                          {new Date(upload.createdAt).toLocaleString().toUpperCase()}
-                        </td>
+                        <td>{new Date(upload.createdAt).toLocaleString().toUpperCase()}</td>
                         <td>
                           {upload.caption.length > 0 ? (
                             <i className="fas fa-check text-success"></i>
@@ -199,9 +197,7 @@ function Upload() {
                             <i className="fas fa-times text-danger"></i>
                           )}
                         </td>
-                        <td>
-                          {upload.tags.length > 0 ? upload.tags.length : '-'}
-                        </td>
+                        <td>{upload.tags.length > 0 ? upload.tags.length : '-'}</td>
                         <td>
                           <div className="btn-group">
                             <button
@@ -299,10 +295,7 @@ function Upload() {
 
                   {progress > 0 && (
                     <div className="progress mb-3">
-                      <div
-                        className="progress-bar"
-                        style={{ width: `${progress}%` }}
-                      >
+                      <div className="progress-bar" style={{ width: `${progress}%` }}>
                         {progress}%
                       </div>
                     </div>

@@ -80,9 +80,7 @@ const useFileUpload = (options = {}) => {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
           onUploadProgress: (progressEvent) => {
-            const percentage = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
+            const percentage = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             setProgress(percentage);
           },
         });
@@ -115,10 +113,7 @@ const useFileUpload = (options = {}) => {
    * @param {File} file - File to validate.
    * @returns {boolean} True if the file is valid, otherwise false.
    */
-  const isValidFile = useCallback(
-    (file) => !validateFile(file),
-    [validateFile]
-  );
+  const isValidFile = useCallback((file) => !validateFile(file), [validateFile]);
 
   return {
     file,

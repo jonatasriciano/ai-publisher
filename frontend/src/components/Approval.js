@@ -22,12 +22,9 @@ function Approval() {
 
     try {
       const token = localStorage.getItem('token');
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/posts/${postId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const { data } = await axios.get(`${process.env.REACT_APP_API_URL}/api/posts/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setPost(data);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to fetch post');
@@ -126,31 +123,25 @@ function Approval() {
                       post.status === 'pending'
                         ? 'warning'
                         : post.status === 'approved'
-                        ? 'success'
-                        : 'secondary'
+                          ? 'success'
+                          : 'secondary'
                     }`}
                   >
                     {post.status}
                   </span>
                 </p>
                 <p>
-                  <strong>Uploaded By:</strong>{' '}
-                  {post.userId?.name || 'Unknown'}
+                  <strong>Uploaded By:</strong> {post.userId?.name || 'Unknown'}
                 </p>
                 <p>
                   <strong>Tags:</strong>{' '}
-                  {post.tags.length > 0 ? (
-                    post.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="badge bg-secondary me-1"
-                      >
-                        {tag}
-                      </span>
-                    ))
-                  ) : (
-                    'No tags available'
-                  )}
+                  {post.tags.length > 0
+                    ? post.tags.map((tag, index) => (
+                        <span key={index} className="badge bg-secondary me-1">
+                          {tag}
+                        </span>
+                      ))
+                    : 'No tags available'}
                 </p>
               </div>
               <div className="col-lg-6 text-center">
@@ -215,8 +206,7 @@ function Approval() {
         </div>
       ) : (
         <div className="alert alert-warning" role="alert">
-          <i className="fas fa-info-circle me-2"></i> No details found for this
-          post.
+          <i className="fas fa-info-circle me-2"></i> No details found for this post.
         </div>
       )}
     </div>

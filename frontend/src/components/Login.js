@@ -49,8 +49,7 @@ function Login() {
 
       navigate('/upload');
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.error || 'Unexpected error. Please try again.';
+      const errorMessage = err.response?.data?.error || 'Unexpected error. Please try again.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -128,11 +127,7 @@ function Login() {
                   </label>
                 </div>
 
-                <button
-                  type="submit"
-                  className="btn btn-primary w-100"
-                  disabled={loading}
-                >
+                <button type="submit" className="btn btn-primary w-100" disabled={loading}>
                   {loading ? <LoadingSpinner size="sm" /> : 'Login'}
                 </button>
 
@@ -140,8 +135,7 @@ function Login() {
                   <Link to="/forgot-password">Forgot Password?</Link>
                   <hr />
                   <p>
-                    Don't have an account?{' '}
-                    <Link to="/register">Register</Link>
+                    Don't have an account? <Link to="/register">Register</Link>
                   </p>
                 </div>
               </form>

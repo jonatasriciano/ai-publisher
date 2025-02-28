@@ -8,7 +8,7 @@ function Register() {
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -20,7 +20,7 @@ function Register() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -49,19 +49,19 @@ function Register() {
         {
           name: formData.name,
           email: formData.email,
-          password: formData.password
+          password: formData.password,
         },
         {
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
 
       navigate('/login', {
         state: {
-          message: 'Registration successful. Please check your email to verify your account.'
-        }
+          message: 'Registration successful. Please check your email to verify your account.',
+        },
       });
     } catch (err) {
       console.error('Registration error:', err);
@@ -80,11 +80,7 @@ function Register() {
               <h2 className="text-center mb-4">Create Account</h2>
 
               {error && (
-                <div
-                  className="alert alert-danger text-center"
-                  role="alert"
-                  aria-live="assertive"
-                >
+                <div className="alert alert-danger text-center" role="alert" aria-live="assertive">
                   {error}
                 </div>
               )}
@@ -168,11 +164,7 @@ function Register() {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  className="btn btn-primary w-100 mb-3"
-                  disabled={loading}
-                >
+                <button type="submit" className="btn btn-primary w-100 mb-3" disabled={loading}>
                   {loading ? <LoadingSpinner /> : 'Register'}
                 </button>
 

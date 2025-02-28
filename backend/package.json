@@ -31,5 +31,11 @@
     "winston": "^3.17.0",
     "xss": "^1.0.15",
     "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.21.0",
+    "eslint-config-prettier": "^10.0.2",
+    "eslint-plugin-prettier": "^5.2.3",
+    "prettier": "^3.5.2"
   }
 }

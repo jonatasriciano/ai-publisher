@@ -57,10 +57,7 @@ class ErrorBoundary extends React.Component {
             )}
 
             <hr />
-            <button
-              className="btn btn-outline-danger"
-              onClick={this.handleReset}
-            >
+            <button className="btn btn-outline-danger" onClick={this.handleReset}>
               Try Again
             </button>
           </div>

@@ -14,7 +14,7 @@ module.exports = {
     static: {
       directory: path.join(__dirname, 'public'), // Static files directory
     },
-    port: 3000,            // Development server port
+    port: 3000, // Development server port
     historyApiFallback: true,
     open: true,
     client: {
@@ -28,8 +28,8 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/,  // Match JavaScript and JSX files
-        exclude: /node_modules/,  // Exclude node_modules directory
+        test: /\.(js|jsx)$/, // Match JavaScript and JSX files
+        exclude: /node_modules/, // Exclude node_modules directory
         use: {
           loader: 'babel-loader', // Transpile ES6+ and JSX
           options: {
@@ -38,7 +38,7 @@ module.exports = {
         },
       },
       {
-        test: /\.css$/i,          // Match CSS files
+        test: /\.css$/i, // Match CSS files
         use: ['style-loader', 'css-loader'],
       },
     ],

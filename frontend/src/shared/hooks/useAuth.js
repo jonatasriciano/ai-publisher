@@ -21,12 +21,9 @@ const useAuth = () => {
    */
   const checkAuthStatus = async (token) => {
     try {
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/auth/me`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const { data } = await axios.get(`${process.env.REACT_APP_API_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setUser(data.user);
     } catch (err) {
       handleLogout(); // Clear token on authentication failure

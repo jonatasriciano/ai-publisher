@@ -73,7 +73,6 @@ function Edit() {
     }
   };
 
-
   const getImageUrl = (filePath) => {
     if (filePath.startsWith('/app')) {
       filePath = filePath.replace('/app', '');
@@ -100,7 +99,11 @@ function Edit() {
           </div>
           <div className="my-3">
             <label className="form-label">Platform</label>
-            <select className="form-select" value={platform} onChange={(e) => setPlatform(e.target.value)}>
+            <select
+              className="form-select"
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value)}
+            >
               <option value="LinkedIn">LinkedIn</option>
               <option value="Twitter">Twitter</option>
               <option value="Facebook">Facebook</option>
@@ -108,20 +111,40 @@ function Edit() {
           </div>
           <div className="mb-3">
             <label className="form-label">Caption</label>
-            <textarea className="form-control" rows="3" value={caption} onChange={(e) => setCaption(e.target.value)}></textarea>
+            <textarea
+              className="form-control"
+              rows="3"
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+            ></textarea>
           </div>
           <div className="mb-3">
             <label className="form-label">Tags</label>
-            <input type="text" className="form-control" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Comma-separated tags" />
+            <input
+              type="text"
+              className="form-control"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="Comma-separated tags"
+            />
           </div>
           <div className="mb-3">
             <label className="form-label">Description</label>
-            <textarea className="form-control" rows="4" value={description} onChange={(e) => setDescription(e.target.value)}></textarea>
+            <textarea
+              className="form-control"
+              rows="4"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            ></textarea>
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? 'Updating...' : 'Update Post'}
           </button>
-          <button type="button" className="btn btn-secondary ms-3" onClick={() => navigate(`/approval/${postId}`)}>
+          <button
+            type="button"
+            className="btn btn-secondary ms-3"
+            onClick={() => navigate(`/approval/${postId}`)}
+          >
             Cancel
           </button>
         </form>

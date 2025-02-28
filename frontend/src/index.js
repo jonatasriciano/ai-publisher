@@ -14,5 +14,7 @@ if (container) {
   const root = createRoot(container); // Create React root
   root.render(<App />); // Render the main App component
 } else {
-  console.error('Root container not found. Make sure there is an element with id="root" in the HTML.');
+  console.error(
+    'Root container not found. Make sure there is an element with id="root" in the HTML.'
+  );
 }

@@ -24,11 +24,7 @@ export const ThemeProvider = ({ children }) => {
     document.body.setAttribute('data-theme', theme); // Set theme on body
   }, [theme]);
 
-  return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
 };
 
 export default ThemeContext;
