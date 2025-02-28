@@ -1,5 +1,16 @@
-const { createPost, getPostsForUser, getPostByIdFromDB, updatePostInDB, approvePostById, deletePostById } = require('../services/postService');
+const { 
+  createPost, 
+  getPostsForUser, 
+  getPostByIdFromDB, 
+  updatePostInDB, 
+  approvePostById, 
+  deletePostById 
+} = require('../services/postService');
+
 const { generateCaptionAndTags } = require('../services/llmService');
+const { fetchInstagramFeed } = require('../services/socialFeedService');
+const { analyzeImageAndText } = require('../services/aiAnalysisService');
+const { postComment } = require('../services/commentService');
 
 /**
  * Create a new post
@@ -80,16 +91,18 @@ exports.getPostById = async (req, res) => {
   }
 };
 
+/**
+ * Update a post by ID
+ */
 exports.updatePost = async (req, res) => {
   try {
-    const { postId } = req.params; // Extract postId from the URL
-    const { platform, caption, tags, description } = req.body; // Extract updated data from the request body
+    const { postId } = req.params;
+    const { platform, caption, tags, description } = req.body;
 
     if (!postId) {
       return res.status(400).json({ error: 'Post ID is required' });
     }
 
-    // Update the post in the database
     const updatedPost = await updatePostInDB(postId, {
       platform,
       caption,
@@ -108,16 +121,17 @@ exports.updatePost = async (req, res) => {
   }
 };
 
+/**
+ * Approve a post by ID
+ */
 exports.approvePost = async (req, res) => {
   try {
     const { postId } = req.params;
 
-    // Validação básica
     if (!postId) {
       return res.status(400).json({ error: 'Post ID is required' });
     }
 
-    // Aprovar o post usando o serviço
     const updatedPost = await approvePostById(postId, req.user.userId); 
     if (!updatedPost) {
       return res.status(404).json({ error: 'Post not found' });
@@ -130,6 +144,9 @@ exports.approvePost = async (req, res) => {
   }
 };
 
+/**
+ * Delete a post by ID
+ */
 exports.deletePost = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -148,5 +165,25 @@ exports.deletePost = async (req, res) => {
   } catch (error) {
     console.error('[DeletePost] Error deleting post:', error.message);
     res.status(500).json({ error: 'Failed to delete post', details: error.message });
+  }
+};
+
+/**
+ * AI-Powered Auto Commenting for Instagram Feed
+ */
+exports.autoCommentOnFeed = async (req, res) => {
+  try {
+    const posts = await fetchInstagramFeed();
+    
+    for (const post of posts) {
+      const comment = await analyzeImageAndText(post.media_url, post.caption);
+      await postComment(post.id, comment);
+      console.log(`[AutoComment] AI Comment Posted: ${comment}`);
+    }
+
+    res.json({ success: true, message: "AI-generated comments have been posted!" });
+  } catch (error) {
+    console.error('[AutoComment] Error:', error.message);
+    res.status(500).json({ success: false, message: "Error processing AI comments." });
   }
 };

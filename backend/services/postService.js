@@ -2,6 +2,9 @@ const Post = require('../models/postModel');
 const { sendEmail, templates } = require('./emailService');
 const path = require('path');
 const fs = require('fs');
+const { fetchInstagramFeed } = require('./socialFeedService');
+const { analyzeImageAndText } = require('./llmService');
+const { postComment } = require('./commentService');
 
 /**
  * Create a new post
@@ -42,8 +45,8 @@ const createPost = async ({ userId, platform, filePath, caption, description, ta
 const getPostsForUser = async (userId) => {
   try {
     return await Post.find({ userId })
-    .sort({ createdAt: -1 })
-    .populate('userId', 'name email');
+      .sort({ createdAt: -1 })
+      .populate('userId', 'name email');
   } catch (error) {
     console.error('[GetPostsForUser] Error retrieving posts:', error.message);
     throw new Error('Failed to fetch posts for user');
@@ -65,12 +68,18 @@ const getPostByIdFromDB = async (postId) => {
   }
 };
 
+/**
+ * Update a post in the database
+ * @param {string} postId - The ID of the post to update.
+ * @param {Object} updateData - The data to update in the post.
+ * @returns {Object|null} The updated post document, or null if not found.
+ */
 const updatePostInDB = async (postId, updateData) => {
   try {
     const updatedPost = await Post.findByIdAndUpdate(
       postId,
-      { $set: updateData }, // Use $set to update only specified fields
-      { new: true, runValidators: true } // Return the updated document and validate input
+      { $set: updateData },
+      { new: true, runValidators: true }
     );
 
     return updatedPost;
@@ -80,9 +89,14 @@ const updatePostInDB = async (postId, updateData) => {
   }
 };
 
+/**
+ * Approve a post by its ID and notify the user via email
+ * @param {string} postId - The ID of the post to approve.
+ * @param {string} approvedBy - The user ID of the approver.
+ * @returns {Object|null} The updated post document, or null if not found.
+ */
 const approvePostById = async (postId, approvedBy) => {
   try {
-    // Retrieve the post and populate uploader's email and name
     const post = await Post.findById(postId).populate('userId', 'email name');
     if (!post || !post.userId || !post.userId.email) {
       throw new Error('Email not found for the uploader');
@@ -90,19 +104,14 @@ const approvePostById = async (postId, approvedBy) => {
 
     console.log(`[ApprovePostById] Post found for email: ${post.userId.email}`);
 
-    // Update post status and metadata
     post.status = 'team_approved';
-    post.metadata = {
-      ...post.metadata,
-      approvedBy,
-    };
+    post.metadata = { ...post.metadata, approvedBy };
 
     const updatedPost = await post.save();
 
-    // Send email using the generated template
     await sendEmail({
       to: post.userId.email,
-      ...templates.postApproval(), // Removed unnecessary verificationToken
+      ...templates.postApproval(),
     });
 
     console.log(`[ApprovePostById] Email sent successfully to ${post.userId.email}`);
@@ -113,27 +122,51 @@ const approvePostById = async (postId, approvedBy) => {
   }
 };
 
+/**
+ * Delete a post and its associated file
+ * @param {string} postId - The ID of the post to delete.
+ * @returns {Object|null} The deleted post document, or null if not found.
+ */
 const deletePostById = async (postId) => {
   try {
     const post = await Post.findById(postId);
 
     if (!post) {
-      return null; // Post not found
+      return null;
     }
 
-    // Delete associated file if it exists
     if (post.filePath) {
       const fullPath = path.join(__dirname, '../uploads', post.filePath);
       if (fs.existsSync(fullPath)) {
-        fs.unlinkSync(fullPath); // Remove file
+        fs.unlinkSync(fullPath);
       }
     }
 
-    // Delete post from the database
     return await Post.findByIdAndDelete(postId);
   } catch (error) {
     console.error('[DeletePostById] Error deleting post:', error.message);
     throw new Error('Failed to delete post');
+  }
+};
+
+/**
+ * Automatically generate and post AI-powered comments on Instagram feed
+ * @returns {Object} Success message or error message.
+ */
+const autoCommentOnFeed = async () => {
+  try {
+    const posts = await fetchInstagramFeed();
+    
+    for (const post of posts) {
+      const comment = await analyzeImageAndText(post.media_url, post.caption);
+      await postComment(post.id, comment);
+      console.log(`[AutoComment] AI Comment Posted: ${comment}`);
+    }
+
+    return { success: true, message: "AI-generated comments have been posted!" };
+  } catch (error) {
+    console.error('[AutoComment] Error:', error.message);
+    throw new Error('Error processing AI comments');
   }
 };
 
@@ -143,5 +176,6 @@ module.exports = {
   getPostByIdFromDB,
   updatePostInDB,
   approvePostById,
-  deletePostById
+  deletePostById,
+  autoCommentOnFeed,
 };

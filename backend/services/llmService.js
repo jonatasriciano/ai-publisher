@@ -1,9 +1,9 @@
 // Required dependencies
-const { OpenAI } = require('openai');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const rateLimit = require('express-rate-limit');
-const fs = require('fs').promises;
-require('dotenv').config();
+const { OpenAI } = require("openai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const rateLimit = require("express-rate-limit");
+const fs = require("fs").promises;
+require("dotenv").config();
 
 // Initialize API clients
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -73,7 +73,7 @@ async function generatePromptFromGemini(prompt, image, maxTokens = 1000) {
     let message;
     try {
       const text = await result.response.text();
-      const jsonString = text.replace(/```json\n|```/g, '');
+      const jsonString = text.replace(/```json\n|```/g, "");
       message = JSON.parse(jsonString);
     } catch (e) {
       const text = await result.response.text();
@@ -97,7 +97,7 @@ async function generatePromptFromGemini(prompt, image, maxTokens = 1000) {
  * Generates social media captions and hashtags using the specified AI provider.
  *
  * @param {Object} promptData - The prompt data containing platform, audience, tone, etc.
- * @param {string} [provider="openai"] - The AI provider to use ('openai' or 'gemini').
+ * @param {string} [provider="gemini"] - The AI provider to use ('openai' or 'gemini').
  * @returns {Object} The generated caption, hashtags, description, and token usage.
  */
 async function generateCaptionAndTags(file, body, provider = "gemini") {
@@ -115,7 +115,7 @@ async function generateCaptionAndTags(file, body, provider = "gemini") {
     };
 
     const prompt = `
-      Develop a caption or long post according to the guidelines adapted for social networks and a set of hashtags relevant to the image provided. Make sure that the results meet the following parameters
+      Develop a caption or long post according to the guidelines adapted for social networks and a set of hashtags relevant to the image provided. Make sure that the results meet the following parameters:
       Guidelines: ${guidelines}
       Platform: ${platform}
       Target Audience: ${targetAudience}
@@ -134,7 +134,7 @@ async function generateCaptionAndTags(file, body, provider = "gemini") {
     const message = result.message;
     let caption, tags, description;
 
-    if (typeof message === 'object') {
+    if (typeof message === "object") {
       caption = message.caption;
       description = message.description;
       tags = message.tags;
@@ -153,10 +153,45 @@ async function generateCaptionAndTags(file, body, provider = "gemini") {
   }
 }
 
+/**
+ * AI-powered analysis of an image and caption to generate an engagement comment.
+ *
+ * @param {string} mediaUrl - The URL of the media to analyze.
+ * @param {string} caption - The caption of the media.
+ * @param {string} [provider="gemini"] - AI provider to use ('openai' or 'gemini').
+ * @returns {string} Generated comment.
+ */
+async function analyzeImageAndText(mediaUrl, caption, provider = "gemini") {
+  try {
+    let comment;
+
+    if (provider === "openai") {
+      const response = await generatePromptFromGpt(
+        `Analyze this image and generate an engaging comment based on the caption: "${caption}". The comment should be friendly and encourage engagement.`,
+        mediaUrl,
+        "You are an AI specialized in social media engagement."
+      );
+      comment = response.message;
+    } else {
+      const result = await generatePromptFromGemini(
+        `Analyze this image and generate an engaging comment based on the caption: "${caption}". The comment should be friendly and encourage engagement.`,
+        mediaUrl
+      );
+      comment = result.message;
+    }
+
+    return comment || "Great post!";
+  } catch (error) {
+    console.error("[AI Service] Error analyzing image and caption:", error.message);
+    return "Great post!";
+  }
+}
+
 // Exporting functions and middleware
 module.exports = {
   generatePromptFromGpt,
   generatePromptFromGemini,
   generateCaptionAndTags,
+  analyzeImageAndText,
   aiLimiter,
 };
