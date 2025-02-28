@@ -29,7 +29,7 @@ const validatePassword = (password) => {
     validator.isLength(password, { min: 6 }) &&
     /[A-Z]/.test(password) && // Contains uppercase letter
     /[a-z]/.test(password) && // Contains lowercase letter
-    /[0-9]/.test(password)    // Contains a number
+    /[0-9]/.test(password) // Contains a number
   );
 };
 
@@ -40,8 +40,7 @@ const validatePassword = (password) => {
  */
 const validateName = (name) => {
   return (
-    validator.isLength(name, { min: 2, max: 50 }) &&
-    validator.matches(name, /^[a-zA-Z\s]*$/) // Only letters and spaces
+    validator.isLength(name, { min: 2, max: 50 }) && validator.matches(name, /^[a-zA-Z\s]*$/) // Only letters and spaces
   );
 };
 
@@ -71,7 +70,8 @@ const validateRegistration = (req, res, next) => {
 
     if (!validatePassword(password)) {
       return res.status(400).json({
-        error: 'Password must be at least 6 characters and contain uppercase, lowercase, and a number',
+        error:
+          'Password must be at least 6 characters and contain uppercase, lowercase, and a number',
         code: 'WEAK_PASSWORD',
       });
     }

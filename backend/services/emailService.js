@@ -76,7 +76,10 @@ const sendEmail = async (options) => {
       return info; // Return email sending result on success
     } catch (error) {
       lastError = error; // Store the last error
-      console.error(`[SendEmail] Attempt ${attempt} failed for recipient ${options.to}:`, error.message);
+      console.error(
+        `[SendEmail] Attempt ${attempt} failed for recipient ${options.to}:`,
+        error.message
+      );
 
       if (attempt < maxRetries) {
         // Wait before retrying

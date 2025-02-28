@@ -2,7 +2,7 @@ const rateLimit = require('express-rate-limit');
 
 /**
  * Rate limiter middleware to restrict excessive requests
- * 
+ *
  * - Limits each IP to 100 requests per 15-minute window.
  * - Sends a friendly error message if the limit is exceeded.
  */

@@ -15,14 +15,15 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const timestamp = Date.now();
-    const uniqueHash = crypto.createHash('sha256')
+    const uniqueHash = crypto
+      .createHash('sha256')
       .update(`${timestamp}-${file.originalname}-${Math.random()}`)
       .digest('hex');
 
     const extension = file.originalname.split('.').pop();
     const hashedFilename = `${uniqueHash}-${timestamp}.${extension}`;
     cb(null, hashedFilename);
-  }
+  },
 });
 
 const upload = multer({ storage });

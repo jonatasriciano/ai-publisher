@@ -1,16 +1,13 @@
-const { 
-  createPost, 
-  getPostsForUser, 
-  getPostByIdFromDB, 
-  updatePostInDB, 
-  approvePostById, 
-  deletePostById 
+const {
+  createPost,
+  getPostsForUser,
+  getPostByIdFromDB,
+  updatePostInDB,
+  approvePostById,
+  deletePostById,
 } = require('../services/postService');
 
-const { generateCaptionAndTags } = require('../services/llmService');
-const { fetchInstagramFeed } = require('../services/socialFeedService');
-const { analyzeImageAndText } = require('../services/aiAnalysisService');
-const { postComment } = require('../services/commentService');
+const { generateCaptionAndTags, analyzeImageAndText } = require('../services/llmService');
 
 /**
  * Create a new post
@@ -132,7 +129,7 @@ exports.approvePost = async (req, res) => {
       return res.status(400).json({ error: 'Post ID is required' });
     }
 
-    const updatedPost = await approvePostById(postId, req.user.userId); 
+    const updatedPost = await approvePostById(postId, req.user.userId);
     if (!updatedPost) {
       return res.status(404).json({ error: 'Post not found' });
     }
@@ -174,16 +171,16 @@ exports.deletePost = async (req, res) => {
 exports.autoCommentOnFeed = async (req, res) => {
   try {
     const posts = await fetchInstagramFeed();
-    
+
     for (const post of posts) {
       const comment = await analyzeImageAndText(post.media_url, post.caption);
       await postComment(post.id, comment);
       console.log(`[AutoComment] AI Comment Posted: ${comment}`);
     }
 
-    res.json({ success: true, message: "AI-generated comments have been posted!" });
+    res.json({ success: true, message: 'AI-generated comments have been posted!' });
   } catch (error) {
     console.error('[AutoComment] Error:', error.message);
-    res.status(500).json({ success: false, message: "Error processing AI comments." });
+    res.status(500).json({ success: false, message: 'Error processing AI comments.' });
   }
 };

@@ -87,7 +87,6 @@ const authenticateUser = async ({ email, password }) => {
   }
 };
 
-
 /**
  * Verify email using the verification token
  *

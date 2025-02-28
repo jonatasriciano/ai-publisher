@@ -63,7 +63,6 @@ const connectDB = async () => {
 };
 connectDB();
 
-
 // Serve static files for uploaded content
 app.use(
   '/uploads',

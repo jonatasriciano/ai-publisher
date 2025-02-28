@@ -2,19 +2,77 @@ const Post = require('../models/postModel');
 const { sendEmail, templates } = require('./emailService');
 const path = require('path');
 const fs = require('fs');
-const { fetchInstagramFeed } = require('./socialFeedService');
+const axios = require('axios');
 const { analyzeImageAndText } = require('./llmService');
-const { postComment } = require('./commentService');
+
+const INSTAGRAM_API_URL = 'https://graph.instagram.com/me/media';
+const ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN;
+
+/**
+ * Fetch Instagram feed using the Graph API.
+ * @returns {Array} List of media objects from the feed.
+ */
+const fetchInstagramFeed = async () => {
+  try {
+    const response = await axios.get(INSTAGRAM_API_URL, {
+      params: {
+        fields: 'id,caption,media_url',
+        access_token: ACCESS_TOKEN,
+      },
+    });
+    return response.data.data || [];
+  } catch (error) {
+    console.error('[FetchInstagramFeed] Error fetching Instagram feed:', error.message);
+    return [];
+  }
+};
+
+/**
+ * Post a comment on an Instagram post
+ * @param {string} mediaId - The Instagram media ID.
+ * @param {string} comment - The comment to post.
+ * @returns {Object|null} Response from the API.
+ */
+const postComment = async (mediaId, comment) => {
+  try {
+    const INSTAGRAM_COMMENT_API = `https://graph.facebook.com/v18.0/${mediaId}/comments`;
+
+    const response = await axios.post(INSTAGRAM_COMMENT_API, {
+      message: comment,
+      access_token: ACCESS_TOKEN,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('[PostComment] Error posting comment:', error.response?.data || error.message);
+    return null;
+  }
+};
+
+/**
+ * Automatically generate and post AI-powered comments on Instagram feed
+ * @returns {Object} Success message or error message.
+ */
+const autoCommentOnFeed = async () => {
+  try {
+    const posts = await fetchInstagramFeed();
+
+    for (const post of posts) {
+      const comment = await analyzeImageAndText(post.media_url, post.caption);
+      await postComment(post.id, comment);
+      console.log(`[AutoComment] AI Comment Posted: ${comment}`);
+    }
+
+    return { success: true, message: 'AI-generated comments have been posted!' };
+  } catch (error) {
+    console.error('[AutoComment] Error:', error.message);
+    throw new Error('Error processing AI comments');
+  }
+};
 
 /**
  * Create a new post
  * @param {Object} postData - The data required to create a new post.
- * @param {string} postData.userId - ID of the user creating the post.
- * @param {string} postData.platform - Platform for the post (e.g., LinkedIn, Twitter).
- * @param {string} postData.filePath - Path to the uploaded file.
- * @param {string} postData.caption - Caption for the post.
- * @param {string} postData.description - Description for the post.
- * @param {Array} postData.tags - Tags associated with the post.
  * @returns {Object} The saved post document.
  */
 const createPost = async ({ userId, platform, filePath, caption, description, tags }) => {
@@ -29,8 +87,7 @@ const createPost = async ({ userId, platform, filePath, caption, description, ta
       status: 'pending',
     });
 
-    const savedPost = await post.save();
-    return savedPost;
+    return await post.save();
   } catch (error) {
     console.error('[CreatePost] Error creating post:', error.message);
     throw new Error('Failed to create post');
@@ -44,9 +101,7 @@ const createPost = async ({ userId, platform, filePath, caption, description, ta
  */
 const getPostsForUser = async (userId) => {
   try {
-    return await Post.find({ userId })
-      .sort({ createdAt: -1 })
-      .populate('userId', 'name email');
+    return await Post.find({ userId }).sort({ createdAt: -1 }).populate('userId', 'name email');
   } catch (error) {
     console.error('[GetPostsForUser] Error retrieving posts:', error.message);
     throw new Error('Failed to fetch posts for user');
@@ -60,8 +115,7 @@ const getPostsForUser = async (userId) => {
  */
 const getPostByIdFromDB = async (postId) => {
   try {
-    const post = await Post.findById(postId).populate('userId', 'name email');
-    return post;
+    return await Post.findById(postId).populate('userId', 'name email');
   } catch (error) {
     console.error('[GetPostByIdFromDB] Error fetching post by ID:', error.message);
     throw new Error('Failed to fetch post by ID');
@@ -76,13 +130,11 @@ const getPostByIdFromDB = async (postId) => {
  */
 const updatePostInDB = async (postId, updateData) => {
   try {
-    const updatedPost = await Post.findByIdAndUpdate(
+    return await Post.findByIdAndUpdate(
       postId,
       { $set: updateData },
       { new: true, runValidators: true }
     );
-
-    return updatedPost;
   } catch (error) {
     console.error('[UpdatePostInDB] Error updating post:', error.message);
     throw new Error('Failed to update post');
@@ -130,16 +182,11 @@ const approvePostById = async (postId, approvedBy) => {
 const deletePostById = async (postId) => {
   try {
     const post = await Post.findById(postId);
-
-    if (!post) {
-      return null;
-    }
+    if (!post) return null;
 
     if (post.filePath) {
       const fullPath = path.join(__dirname, '../uploads', post.filePath);
-      if (fs.existsSync(fullPath)) {
-        fs.unlinkSync(fullPath);
-      }
+      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
     }
 
     return await Post.findByIdAndDelete(postId);
@@ -149,33 +196,14 @@ const deletePostById = async (postId) => {
   }
 };
 
-/**
- * Automatically generate and post AI-powered comments on Instagram feed
- * @returns {Object} Success message or error message.
- */
-const autoCommentOnFeed = async () => {
-  try {
-    const posts = await fetchInstagramFeed();
-    
-    for (const post of posts) {
-      const comment = await analyzeImageAndText(post.media_url, post.caption);
-      await postComment(post.id, comment);
-      console.log(`[AutoComment] AI Comment Posted: ${comment}`);
-    }
-
-    return { success: true, message: "AI-generated comments have been posted!" };
-  } catch (error) {
-    console.error('[AutoComment] Error:', error.message);
-    throw new Error('Error processing AI comments');
-  }
-};
-
 module.exports = {
+  fetchInstagramFeed, // Now part of postService.js
+  postComment,
+  autoCommentOnFeed,
   createPost,
   getPostsForUser,
   getPostByIdFromDB,
   updatePostInDB,
   approvePostById,
   deletePostById,
-  autoCommentOnFeed,
 };
